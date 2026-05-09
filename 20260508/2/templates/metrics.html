@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型评估指标</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 30px; color: white; }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .subtitle { font-size: 1.1rem; opacity: 0.9; }
+        .nav { margin-bottom: 20px; }
+        .nav a { color: white; text-decoration: none; margin-right: 20px; padding: 8px 16px; border-radius: 20px; background: rgba(255,255,255,0.2); transition: background 0.3s; }
+        .nav a:hover { background: rgba(255,255,255,0.3); }
+        .nav a.active { background: rgba(255,255,255,0.4); font-weight: bold; }
+        .card { background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); margin-bottom: 20px; }
+        h2 { color: #333; margin-bottom: 20px; font-size: 1.3rem; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .metric-card { text-align: center; padding: 30px; border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .metric-label { font-size: 1.1rem; margin-bottom: 15px; opacity: 0.9; }
+        .metric-value { font-size: 3rem; font-weight: bold; margin-bottom: 10px; }
+        .metric-desc { font-size: 0.9rem; opacity: 0.8; }
+        .info-card { background: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+        .info-card h3 { color: #333; margin-bottom: 10px; font-size: 1.1rem; }
+        .info-card p { color: #666; font-size: 0.95rem; line-height: 1.7; margin-bottom: 8px; }
+        .info-card ul { color: #666; font-size: 0.95rem; line-height: 1.8; margin-left: 20px; }
+        .coefficients-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .coefficients-table th, .coefficients-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        .coefficients-table th { background: #f8f9fa; font-weight: 600; color: #333; }
+        .coefficients-table tr:hover { background: #f8f9fa; }
+        .positive { color: #28a745; }
+        .negative { color: #dc3545; }
+        .intercept { background: #e8f5e9; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .intercept strong { color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>模型评估指标</h1>
+            <p class="subtitle">线性回归模型在测试集上的表现</p>
+        </header>
+        <div class="nav">
+            <a href="/">房价预测</a>
+            <a href="/metrics" class="active">模型评估</a>
+        </div>
+        <div class="card">
+            <h2>核心评估指标</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">R2 Score (决定系数)</div>
+                    <div class="metric-value">{{ "%.4f" % metrics.r2 }}</div>
+                    <div class="metric-desc">越接近1表示模型拟合效果越好</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">MSE (均方误差)</div>
+                    <div class="metric-value">{{ "%.4f" % metrics.mse }}</div>
+                    <div class="metric-desc">越小表示模型预测越准确</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <h2>指标说明</h2>
+            <div class="info-card">
+                <h3>R2 Score (决定系数)</h3>
+                <p>R2 Score 是评估回归模型拟合优度的重要指标，取值范围为 (-∞, 1]：</p>
+                <ul>
+                    <li><strong>R² = 1</strong>：模型完美预测所有数据点</li>
+                    <li><strong>R² = 0</strong>：模型预测效果等同于使用均值预测</li>
+                    <li><strong>R² < 0</strong>：模型预测效果比使用均值更差</li>
+                    <li>一般来说，R² > 0.7 表示模型拟合效果较好</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3>MSE (均方误差)</h3>
+                <p>MSE 是预测值与真实值差的平方的平均值：</p>
+                <ul>
+                    <li>MSE 越小，说明模型的预测精度越高</li>
+                    <li>MSE 对异常值比较敏感（因为是平方误差）</li>
+                    <li>在波士顿房价数据集中，目标值单位为千美元，因此 MSE 的单位为 (千美元)²</li>
+                </ul>
+            </div>
+        </div>
+        <div class="card">
+            <h2>模型参数 (线性回归系数)</h2>
+            <div class="info-card">
+                <p>线性回归模型的公式为：<strong>房价 = 截距 + Σ(特征权重 × 特征值)</strong></p>
+                <div class="intercept">
+                    <strong>截距 (Intercept): </strong>{{ "%.4f" % metrics.intercept }} (千美元)
+                </div>
+            </div>
+            <table class="coefficients-table">
+                <thead>
+                    <tr>
+                        <th>特征名称</th>
+                        <th>特征含义</th>
+                        <th>系数 (权重)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>CRIM</td>
+                        <td>城镇人均犯罪率</td>
+                        <td class="{{ 'negative' if metrics.coefficients[0] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[0] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>ZN</td>
+                        <td>超过25000平方英尺的住宅用地比例</td>
+                        <td class="{{ 'negative' if metrics.coefficients[1] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[1] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>INDUS</td>
+                        <td>城镇非零售商业用地比例</td>
+                        <td class="{{ 'negative' if metrics.coefficients[2] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[2] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>CHAS</td>
+                        <td>是否靠近查尔斯河</td>
+                        <td class="{{ 'negative' if metrics.coefficients[3] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[3] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>NOX</td>
+                        <td>一氧化氮浓度</td>
+                        <td class="{{ 'negative' if metrics.coefficients[4] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[4] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>RM</td>
+                        <td>平均房间数</td>
+                        <td class="{{ 'negative' if metrics.coefficients[5] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[5] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>AGE</td>
+                        <td>1940年前建造的自住房屋比例</td>
+                        <td class="{{ 'negative' if metrics.coefficients[6] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[6] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>DIS</td>
+                        <td>到五个就业中心的加权距离</td>
+                        <td class="{{ 'negative' if metrics.coefficients[7] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[7] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>RAD</td>
+                        <td>辐射性公路可达性指数</td>
+                        <td class="{{ 'negative' if metrics.coefficients[8] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[8] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>TAX</td>
+                        <td>每10000美元的全值财产税率</td>
+                        <td class="{{ 'negative' if metrics.coefficients[9] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[9] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>PTRATIO</td>
+                        <td>城镇师生比例</td>
+                        <td class="{{ 'negative' if metrics.coefficients[10] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[10] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>B</td>
+                        <td>黑人比例指数</td>
+                        <td class="{{ 'negative' if metrics.coefficients[11] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[11] }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>LSTAT</td>
+                        <td>低收入人口比例</td>
+                        <td class="{{ 'negative' if metrics.coefficients[12] < 0 else 'positive' }}">
+                            {{ "%.4f" % metrics.coefficients[12] }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时传感器仪表板</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .controls label {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .controls select {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .controls select:hover {
+            border-color: #764ba2;
+        }
+
+        .controls select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .gauge-wrapper {
+            width: 280px;
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gauge-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .current-value {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 15px;
+        }
+
+        .current-value small {
+            font-size: 0.5em;
+            color: #666;
+            font-weight: normal;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        .sensor-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .sensor-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .mini-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .mini-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .mini-card-title {
+            font-size: 1em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .mini-card-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .mini-card-value.temperature {
+            color: #e74c3c;
+        }
+
+        .mini-card-value.humidity {
+            color: #3498db;
+        }
+
+        .mini-card-value.pressure {
+            color: #2ecc71;
+        }
+
+        .status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status.connected {
+            background: #2ecc71;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status.disconnected {
+            background: #e74c3c;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(1.2);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .connection-status {
+            background: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 实时传感器仪表板</h1>
+        
+        <div class="connection-status">
+            <span id="connectionStatus" class="status disconnected"></span>
+            <span id="connectionText">连接中...</span>
+        </div>
+
+        <div class="controls">
+            <label for="sensorSelect">选择传感器:</label>
+            <select id="sensorSelect">
+                <option value="">加载中...</option>
+            </select>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-title">📈 实时数据趋势</div>
+                <div class="chart-container">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🎯 当前读数</div>
+                <div class="gauge-container">
+                    <div class="gauge-wrapper">
+                        <canvas id="gaugeCanvas" class="gauge-canvas"></canvas>
+                    </div>
+                    <div id="currentValue" class="current-value">-- <small>--</small></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sensor-cards">
+            <div class="mini-card">
+                <div class="mini-card-title">🌡️ 温度</div>
+                <div id="temperatureValue" class="mini-card-value temperature">-- °C</div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-card-title">💧 湿度</div>
+                <div id="humidityValue" class="mini-card-value humidity">-- %</div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-card-title">🌪️ 压力</div>
+                <div id="pressureValue" class="mini-card-value pressure">-- hPa</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let lineChart = null;
+        let selectedSensor = null;
+        let sensorData = {};
+        let sensorInfo = {};
+
+        const sensorColors = {
+            temperature: {
+                primary: '#e74c3c',
+                secondary: 'rgba(231, 76, 60, 0.2)',
+                gradient: ['#ff9a9e', '#fad0c4']
+            },
+            humidity: {
+                primary: '#3498db',
+                secondary: 'rgba(52, 152, 219, 0.2)',
+                gradient: ['#a1c4fd', '#c2e9fb']
+            },
+            pressure: {
+                primary: '#2ecc71',
+                secondary: 'rgba(46, 204, 113, 0.2)',
+                gradient: ['#84fab0', '#8fd3f4']
+            }
+        };
+
+        const sensorConfig = {
+            temperature: { min: -10, max: 50, unit: '°C', name: '温度' },
+            humidity: { min: 0, max: 100, unit: '%', name: '湿度' },
+            pressure: { min: 980, max: 1050, unit: 'hPa', name: '压力' }
+        };
+
+        socket.on('connect', () => {
+            document.getElementById('connectionStatus').className = 'status connected';
+            document.getElementById('connectionText').textContent = '已连接';
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('connectionStatus').className = 'status disconnected';
+            document.getElementById('connectionText').textContent = '已断开连接';
+        });
+
+        socket.on('sensor_list', (sensors) => {
+            const select = document.getElementById('sensorSelect');
+            select.innerHTML = '';
+            sensors.forEach(sensor => {
+                const option = document.createElement('option');
+                option.value = sensor.id;
+                option.textContent = sensor.name;
+                select.appendChild(option);
+            });
+            
+            if (sensors.length > 0) {
+                selectedSensor = sensors[0].id;
+                refreshSelectedSensorDisplay();
+            }
+        });
+
+        socket.on('sensor_data', (data) => {
+            sensorData[data.sensor_id] = data;
+            if (data.sensor_id === selectedSensor) {
+                updateChart(data);
+                updateGauge(data);
+            }
+        });
+
+        socket.on('chart_update', (allData) => {
+            for (const sensorId in allData) {
+                sensorData[sensorId] = allData[sensorId];
+            }
+            if (selectedSensor && sensorData[selectedSensor]) {
+                updateChart(sensorData[selectedSensor]);
+            }
+        });
+
+        socket.on('all_sensor_values', (values) => {
+            updateMiniCards(values);
+        });
+
+        socket.on('sensor_update', (values) => {
+            updateMiniCards(values);
+            if (selectedSensor && values[selectedSensor]) {
+                updateGaugeValue(values[selectedSensor].value, values[selectedSensor].unit);
+            }
+        });
+
+        document.getElementById('sensorSelect').addEventListener('change', (e) => {
+            selectedSensor = e.target.value;
+            refreshSelectedSensorDisplay();
+        });
+
+        function refreshSelectedSensorDisplay() {
+            if (!selectedSensor) return;
+            
+            if (sensorData[selectedSensor]) {
+                const data = sensorData[selectedSensor];
+                updateChart(data);
+                updateGauge(data);
+            } else {
+                loadSensorData(selectedSensor);
+            }
+        }
+
+        function loadSensorData(sensorId) {
+            socket.emit('get_sensor_data', sensorId);
+        }
+
+        function updateMiniCards(values) {
+            if (values.temperature) {
+                document.getElementById('temperatureValue').textContent = 
+                    `${values.temperature.value.toFixed(2)} ${values.temperature.unit}`;
+            }
+            if (values.humidity) {
+                document.getElementById('humidityValue').textContent = 
+                    `${values.humidity.value.toFixed(2)} ${values.humidity.unit}`;
+            }
+            if (values.pressure) {
+                document.getElementById('pressureValue').textContent = 
+                    `${values.pressure.value.toFixed(2)} ${values.pressure.unit}`;
+            }
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            
+            lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '传感器数据',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        pointHoverBackgroundColor: '#667eea',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 300
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleFont: {
+                                size: 14
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            padding: 12
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        function updateChart(data) {
+            if (!lineChart) {
+                initChart();
+            }
+
+            const colors = sensorColors[data.sensor_id] || sensorColors.temperature;
+            
+            lineChart.data.labels = data.timestamps;
+            lineChart.data.datasets[0].data = data.values;
+            lineChart.data.datasets[0].label = `${data.name} (${data.unit})`;
+            lineChart.data.datasets[0].borderColor = colors.primary;
+            lineChart.data.datasets[0].backgroundColor = colors.secondary;
+            
+            lineChart.options.scales.y.min = sensorConfig[data.sensor_id].min;
+            lineChart.options.scales.y.max = sensorConfig[data.sensor_id].max;
+            
+            lineChart.update('none');
+        }
+
+        function drawGauge(ctx, width, height, config) {
+            const centerX = width / 2;
+            const centerY = height * 0.6;
+            const radius = Math.min(width, height) * 0.4;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI, 2 * Math.PI);
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 30;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            
+            const gradient = ctx.createLinearGradient(
+                centerX - radius, centerY,
+                centerX + radius, centerY
+            );
+            gradient.addColorStop(0, config.gradient[0]);
+            gradient.addColorStop(1, config.gradient[1]);
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI, Math.PI + (config.value / config.range) * Math.PI);
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 30;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            
+            ctx.fillStyle = config.primary;
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(config.minLabel, centerX - radius + 15, centerY + 40);
+            ctx.fillText(config.maxLabel, centerX + radius - 15, centerY + 40);
+        }
+
+        function initGaugeCanvas() {
+            const canvas = document.getElementById('gaugeCanvas');
+            const wrapper = canvas.parentElement;
+            const size = Math.min(wrapper.clientWidth, wrapper.clientHeight, 280);
+            const dpr = window.devicePixelRatio || 1;
+            
+            canvas.width = size * dpr;
+            canvas.height = size * dpr;
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+            
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            
+            return { canvas, ctx, width: size, height: size };
+        }
+
+        function updateGauge(data) {
+            const { canvas, ctx, width, height } = initGaugeCanvas();
+            const config = sensorConfig[data.sensor_id];
+            const colors = sensorColors[data.sensor_id];
+            
+            const range = config.max - config.min;
+            const normalizedValue = Math.max(0, Math.min(range, data.current_value - config.min));
+            
+            drawGauge(ctx, width, height, {
+                value: normalizedValue,
+                range: range,
+                primary: colors.primary,
+                gradient: colors.gradient,
+                minLabel: `${config.min}`,
+                maxLabel: `${config.max}`
+            });
+            
+            updateGaugeValue(data.current_value, data.unit);
+        }
+
+        function updateGaugeValue(value, unit) {
+            document.getElementById('currentValue').innerHTML = 
+                `${value.toFixed(2)} <small>${unit}</small>`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+        });
+    </script>
+</body>
+</html>

@@ -253,11 +253,13 @@
         }
 
         .chart-container {
-            height: 400px;
+            min-height: 400px;
+            width: 100%;
+            overflow: hidden;
         }
 
         .chart-container.full-height {
-            height: 500px;
+            min-height: 500px;
         }
 
         .alert {
@@ -586,16 +588,45 @@
                     summarySection.classList.add('active');
                     chartsSection.classList.add('active');
                     
-                    Plotly.newPlot('trendChart', data.trend.data, data.trend.layout, { responsive: true });
+                    const trendLayout = {
+                        ...data.trend.layout,
+                        height: 400,
+                        margin: { t: 60, b: 60, l: 80, r: 40 }
+                    };
+                    Plotly.newPlot('trendChart', data.trend.data, trendLayout, { responsive: true, displayModeBar: true });
                     
-                    Plotly.newPlot('pieChart', data.pie.data, data.pie.layout, { responsive: true });
+                    const pieLayout = {
+                        ...data.pie.layout,
+                        height: 380,
+                        legend: {
+                            ...data.pie.layout.legend,
+                            y: 0.5,
+                            x: 0.98
+                        }
+                    };
+                    Plotly.newPlot('pieChart', data.pie.data, pieLayout, { responsive: true, displayModeBar: true });
                     
                     const heatmapDiv = document.getElementById('heatmapChart');
                     if (data.heatmap.empty) {
                         heatmapDiv.innerHTML = `<div class="heatmap-message">${data.heatmap.message}</div>`;
                     } else {
                         const heatmapData = JSON.parse(data.heatmap.data);
-                        Plotly.newPlot('heatmapChart', heatmapData.data, heatmapData.layout, { responsive: true });
+                        const heatmapLayout = {
+                            ...heatmapData.layout,
+                            height: 500,
+                            geo: {
+                                ...heatmapData.layout.geo,
+                                projection: {
+                                    type: 'mercator',
+                                    scale: 4.5
+                                }
+                            }
+                        };
+                        Plotly.newPlot('heatmapChart', heatmapData.data, heatmapLayout, { 
+                            responsive: true, 
+                            displayModeBar: true,
+                            modeBarButtonsToRemove: ['lasso2d', 'select2d']
+                        });
                     }
                 } else {
                     showAlert(data.message, 'error');

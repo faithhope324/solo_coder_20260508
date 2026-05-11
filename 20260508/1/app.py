@@ -103,23 +103,34 @@ def get_category_pie(df):
     category_data = df.groupby('产品类别')['销售额'].sum().reset_index()
     category_data = category_data.sort_values('销售额', ascending=False)
     
-    fig = px.pie(
-        category_data,
-        values='销售额',
-        names='产品类别',
-        title='各类别销售额占比',
-        hole=0.4
-    )
+    fig = go.Figure(data=[go.Pie(
+        labels=category_data['产品类别'],
+        values=category_data['销售额'],
+        hole=0.5,
+        textposition='auto',
+        textinfo='percent',
+        textfont=dict(size=11),
+        hovertemplate='<b>%{label}</b><br>销售额: ¥%{value:,.2f}<br>占比: %{percent}',
+        marker=dict(line=dict(color='white', width=2))
+    )])
     
     fig.update_layout(
+        title='各类别销售额占比',
         template='plotly_white',
-        legend=dict(orientation='h', yanchor='bottom', y=-0.1)
-    )
-    
-    fig.update_traces(
-        textposition='inside',
-        textinfo='percent+label',
-        hovertemplate='<b>%{label}</b><br>销售额: ¥%{value:,.2f}<br>占比: %{percent}'
+        legend=dict(
+            orientation='v',
+            yanchor='middle',
+            y=0.5,
+            xanchor='right',
+            x=0.95,
+            font=dict(size=10),
+            itemsizing='constant',
+            itemwidth=30
+        ),
+        margin=dict(t=50, b=20, l=20, r=100),
+        autosize=True,
+        width=None,
+        height=None
     )
     
     return fig.to_json()
@@ -146,17 +157,23 @@ def get_region_heatmap(df):
     
     fig = go.Figure()
     
-    fig.add_trace(go.Scattermapbox(
+    fig.add_trace(go.Scattergeo(
         lat=region_data['lat'],
         lon=region_data['lon'],
         mode='markers',
-        marker=go.scattermapbox.Marker(
-            size=region_data['销售额'].apply(lambda x: max(10, min(50, x / region_data['销售额'].max() * 40 + 10))),
+        marker=dict(
+            size=region_data['销售额'].apply(lambda x: max(15, min(40, x / region_data['销售额'].max() * 25 + 15))),
             color=region_data['销售额'],
             colorscale='Viridis',
             showscale=True,
-            colorbar_title='销售额',
-            opacity=0.8
+            colorbar=dict(
+                title='销售额',
+                tickformat=',.0f',
+                len=0.7,
+                x=0.9
+            ),
+            opacity=0.85,
+            line=dict(width=2, color='white')
         ),
         text=region_data.apply(lambda row: f'<b>{row["地区"]}</b><br>销售额: ¥{row["销售额"]:,.2f}', axis=1),
         hoverinfo='text'
@@ -164,13 +181,25 @@ def get_region_heatmap(df):
     
     fig.update_layout(
         title='各地区销售额热力图',
-        mapbox=dict(
-            style='carto-positron',
+        geo=dict(
+            scope='asia',
+            projection=dict(type='mercator', scale=4),
             center=dict(lat=35.8617, lon=104.1954),
-            zoom=3
+            showland=True,
+            landcolor='rgb(243, 243, 243)',
+            showcountries=True,
+            countrycolor='rgb(200, 200, 200)',
+            showsubunits=True,
+            subunitcolor='rgb(180, 180, 180)',
+            showlakes=True,
+            lakecolor='rgb(180, 200, 255)',
+            showcoastlines=True,
+            coastlinecolor='rgb(100, 100, 100)',
+            resolution=50
         ),
         template='plotly_white',
-        margin=dict(l=0, r=0, t=30, b=0)
+        margin=dict(l=10, r=80, t=50, b=10),
+        autosize=True
     )
     
     return {'empty': False, 'data': fig.to_json()}

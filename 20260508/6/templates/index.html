@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维拉普拉斯方程求解 - 平行板电容器</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #plotly-div {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>二维拉普拉斯方程求解 - 平行板电容器</h1>
+        
+        <form id="params-form">
+            <div class="form-group">
+                <label for="d">板间距 (m):</label>
+                <input type="number" id="d" name="d" value="0.1" step="0.01" min="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="V1">上板电压 (V):</label>
+                <input type="number" id="V1" name="V1" value="10" step="1" required>
+            </div>
+            <div class="form-group">
+                <label for="V2">下板电压 (V):</label>
+                <input type="number" id="V2" name="V2" value="0" step="1" required>
+            </div>
+            <button type="button" onclick="solve()">求解并显示结果</button>
+        </form>
+        
+        <div class="result" id="result">
+            <div id="plotly-div"></div>
+        </div>
+    </div>
+    
+    <script>
+        function solve() {
+            const form = document.getElementById('params-form');
+            const formData = new FormData(form);
+            
+            fetch('/solve', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const x = data.x;
+                const y = data.y;
+                const V = data.V;
+                const Ex = data.Ex;
+                const Ey = data.Ey;
+                const d = data.d;
+                const V1 = data.V1;
+                const V2 = data.V2;
+                
+                // 创建Plotly图形
+                const fig = {
+                    data: [
+                        // 电势等高线
+                        {
+                            type: 'contour',
+                            x: x,
+                            y: y,
+                            z: V,
+                            colorscale: 'Viridis',
+                            colorbar: { title: 'Potential (V)' },
+                            contours: {
+                                start: Math.min(V1, V2),
+                                end: Math.max(V1, V2),
+                                size: (Math.max(V1, V2) - Math.min(V1, V2)) / 20
+                            }
+                        }
+                    ],
+                    layout: {
+                        title: 'Potential and Electric Field Distribution',
+                        xaxis: { title: 'x (m)' },
+                        yaxis: { title: 'y (m)' },
+                        width: 800,
+                        height: 600,
+                        margin: { l: 50, r: 50, t: 50, b: 50 },
+                        shapes: [
+                            // 上极板
+                            {
+                                type: 'line',
+                                x0: 0, y0: d,
+                                x1: d, y1: d,
+                                line: { color: 'red', width: 2 }
+                            },
+                            // 下极板
+                            {
+                                type: 'line',
+                                x0: 0, y0: 0,
+                                x1: d, y1: 0,
+                                line: { color: 'red', width: 2 }
+                            }
+                        ],
+                        annotations: []
+                    }
+                };
+                
+                // 添加电场矢量箭头
+                const skip = 5;
+                for (let i = 0; i < x.length; i += skip) {
+                    for (let j = 0; j < y.length; j += skip) {
+                        fig.layout.annotations.push({
+                            x: x[i],
+                            y: y[j],
+                            ax: x[i] + Ex[j][i] * 0.01,
+                            ay: y[j] + Ey[j][i] * 0.01,
+                            axref: 'x',
+                            ayref: 'y',
+                            showarrow: true,
+                            arrowhead: 2,
+                            arrowsize: 1,
+                            arrowwidth: 1,
+                            arrowcolor: 'white'
+                        });
+                    }
+                }
+                
+                // 绘制图形
+                Plotly.newPlot('plotly-div', fig.data, fig.layout);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('计算过程中出现错误，请检查参数');
+            });
+        }
+    </script>
+</body>
+</html>

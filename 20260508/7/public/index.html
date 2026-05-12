@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>语音转录应用</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #startBtn {
+      background-color: #4CAF50;
+      color: white;
+    }
+    #stopBtn {
+      background-color: #f44336;
+      color: white;
+    }
+    #uploadBtn {
+      background-color: #2196F3;
+      color: white;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+      min-height: 100px;
+      white-space: pre-wrap;
+    }
+    #status {
+      margin: 10px 0;
+      font-style: italic;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>语音转录应用</h1>
+    <div class="controls">
+      <button id="startBtn">开始录音</button>
+      <button id="stopBtn" disabled>停止录音</button>
+      <button id="uploadBtn">上传文件</button>
+      <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+    </div>
+    <div id="status">就绪</div>
+    <div id="result">转录结果将显示在这里...</div>
+  </div>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+    let stream;
+    let recognition;
+    let audioContext;
+    let analyser;
+    let dataArray;
+    let bufferLength;
+    let canvas;
+    let canvasCtx;
+    let animationId;
+
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('fileInput');
+    const status = document.getElementById('status');
+    const result = document.getElementById('result');
+
+    // 初始化Web Speech API
+    function initSpeechRecognition() {
+      if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'zh-CN';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+        recognition.timeout = 0; // 禁用超时
+
+        recognition.onstart = () => {
+          status.textContent = '正在识别...';
+          startBtn.disabled = true;
+          stopBtn.disabled = false;
+        };
+
+        recognition.onresult = (event) => {
+          let transcript = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          result.textContent = transcript;
+        };
+
+        recognition.onend = () => {
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          status.textContent = '完成';
+          stopWaveAnimation();
+        };
+
+        recognition.onerror = (event) => {
+          console.error('识别错误:', event.error);
+          status.textContent = '识别失败，请重试';
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          stopWaveAnimation();
+        };
+      } else {
+        status.textContent = '浏览器不支持语音识别';
+        startBtn.disabled = true;
+      }
+    }
+
+    // 初始化波形可视化
+    function initWaveVisualization() {
+      canvas = document.createElement('canvas');
+      const containerWidth = document.querySelector('.container').offsetWidth;
+      canvas.width = containerWidth - 60; // 减去容器的padding
+      canvas.height = 100;
+      canvas.style.marginTop = '10px';
+      canvas.style.backgroundColor = '#f0f0f0';
+      canvas.style.borderRadius = '5px';
+      document.querySelector('.container').insertBefore(canvas, result);
+      canvasCtx = canvas.getContext('2d');
+    }
+
+    // 开始波形动画
+    function startWaveAnimation() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+      }
+
+      if (stream) {
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        drawWave();
+      }
+    }
+
+    // 绘制波形
+    function drawWave() {
+      if (!analyser || !canvasCtx) return;
+
+      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+      analyser.getByteTimeDomainData(dataArray);
+
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = '#4CAF50';
+      canvasCtx.beginPath();
+
+      const sliceWidth = canvas.width * 1.0 / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * canvas.height / 2;
+
+        if (i === 0) {
+          canvasCtx.moveTo(x, y);
+        } else {
+          canvasCtx.lineTo(x, y);
+        }
+
+        x += sliceWidth;
+      }
+
+      canvasCtx.lineTo(canvas.width, canvas.height / 2);
+      canvasCtx.stroke();
+
+      animationId = requestAnimationFrame(drawWave);
+    }
+
+    // 停止波形动画
+    function stopWaveAnimation() {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      if (canvasCtx) {
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    // 开始录音
+    startBtn.addEventListener('click', async () => {
+      try {
+        // 获取麦克风权限
+        if (!stream) {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+        
+        // 开始波形动画
+        startWaveAnimation();
+        
+        // 开始语音识别
+        if (recognition) {
+          recognition.start();
+        }
+      } catch (error) {
+        console.error('录音失败:', error);
+        status.textContent = '录音失败，请检查麦克风权限';
+      }
+    });
+
+    // 停止录音
+    stopBtn.addEventListener('click', () => {
+      if (recognition) {
+        recognition.stop();
+      }
+    });
+
+    // 上传文件
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        status.textContent = '正在处理...';
+        // 对于文件上传，我们可以使用Web Speech API的音频处理
+        // 这里简化处理，显示提示信息
+        result.textContent = '文件上传功能需要后端服务支持';
+        status.textContent = '完成';
+      }
+    });
+
+    // 提前获取麦克风权限
+    async function getMicrophonePermission() {
+      try {
+        if (!stream) {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          status.textContent = '麦克风权限已获取';
+        }
+      } catch (error) {
+        console.error('获取麦克风权限失败:', error);
+        status.textContent = '获取麦克风权限失败';
+      }
+    }
+
+    // 初始化
+    initSpeechRecognition();
+    initWaveVisualization();
+    getMicrophonePermission();
+  </script>
+</body>
+</html>

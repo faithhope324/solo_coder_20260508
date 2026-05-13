@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logistic 映射混沌分析</title>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e94560;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #e94560;
+            font-size: 2.5rem;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        }
+        .control-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(233, 69, 96, 0.2);
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 8px;
+            color: #fff;
+            font-weight: 500;
+        }
+        input[type="number"] {
+            padding: 12px;
+            border: 2px solid rgba(233, 69, 96, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #e94560;
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+        }
+        button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .result-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(233, 69, 96, 0.2);
+        }
+        .lyapunov-result {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .lyapunov-card {
+            background: rgba(233, 69, 96, 0.1);
+            padding: 20px 40px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(233, 69, 96, 0.3);
+        }
+        .lyapunov-label {
+            font-size: 14px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .lyapunov-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #e94560;
+        }
+        .lyapunov-status {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .status-chaotic {
+            color: #ff6b6b;
+        }
+        .status-stable {
+            color: #4ecdc4;
+        }
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        .chart-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(233, 69, 96, 0.2);
+        }
+        .chart-title {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        .bifurcation-section {
+            margin-top: 25px;
+        }
+        @media (max-width: 900px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Logistic 映射混沌分析器</h1>
+        
+        <div class="control-panel">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="r">生长参数 r (0-4)</label>
+                    <input type="number" id="r" step="0.01" min="0" max="4" value="3.8">
+                </div>
+                <div class="control-group">
+                    <label for="x0">初始值 x0 (0-1)</label>
+                    <input type="number" id="x0" step="0.01" min="0" max="1" value="0.5">
+                </div>
+                <div class="control-group">
+                    <label for="n_iter">迭代次数</label>
+                    <input type="number" id="n_iter" min="100" max="10000" value="1000">
+                </div>
+                <div class="control-group" style="justify-content: flex-end;">
+                    <button id="analyzeBtn">重新计算</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-panel" id="resultPanel" style="display: none;">
+            <div class="lyapunov-result">
+                <div class="lyapunov-card">
+                    <div class="lyapunov-label">Lyapunov 指数</div>
+                    <div class="lyapunov-value" id="lyapunovValue">--</div>
+                    <div class="lyapunov-status" id="lyapunovStatus"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-box">
+                <div class="chart-title">时间序列图</div>
+                <div id="timeSeriesChart"></div>
+            </div>
+            <div class="chart-box">
+                <div class="chart-title">分岔图</div>
+                <div id="bifurcationChart"></div>
+            </div>
+        </div>
+
+        <div class="bifurcation-section">
+            <div class="chart-box">
+                <div class="chart-title">Lyapunov 指数 vs 参数 r</div>
+                <div id="lyapunovChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const plotLayout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(255,255,255,0.02)',
+            font: { color: '#fff' },
+            margin: { l: 60, r: 30, t: 30, b: 50 },
+            xaxis: {
+                gridcolor: 'rgba(255,255,255,0.1)',
+                linecolor: 'rgba(255,255,255,0.3)'
+            },
+            yaxis: {
+                gridcolor: 'rgba(255,255,255,0.1)',
+                linecolor: 'rgba(255,255,255,0.3)'
+            }
+        };
+
+        function validateInputs(r, x0, nIter) {
+            const errors = [];
+            
+            if (isNaN(r)) {
+                errors.push('生长参数 r 必须是有效的数字');
+            } else if (r < 0 || r > 4) {
+                errors.push('生长参数 r 必须在 0 到 4 之间');
+            }
+            
+            if (isNaN(x0)) {
+                errors.push('初始值 x0 必须是有效的数字');
+            } else if (x0 <= 0 || x0 >= 1) {
+                errors.push('初始值 x0 必须在 0 到 1 之间（不包括边界）');
+            }
+            
+            if (isNaN(nIter)) {
+                errors.push('迭代次数必须是有效的整数');
+            } else if (nIter < 100 || nIter > 10000) {
+                errors.push('迭代次数必须在 100 到 10000 之间');
+            }
+            
+            return errors;
+        }
+
+        function showError(message) {
+            const resultPanel = document.getElementById('resultPanel');
+            const existingError = document.getElementById('errorMessage');
+            if (existingError) existingError.remove();
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'errorMessage';
+            errorDiv.style.cssText = 'background: rgba(255, 100, 100, 0.2); border: 1px solid #ff6b6b; border-radius: 8px; padding: 15px; margin-bottom: 20px; color: #ff6b6b;';
+            errorDiv.innerHTML = '<strong>⚠️ 输入错误：</strong><br>' + message.replace(/\n/g, '<br>');
+            
+            resultPanel.parentElement.insertBefore(errorDiv, resultPanel);
+            
+            setTimeout(() => {
+                const el = document.getElementById('errorMessage');
+                if (el) el.remove();
+            }, 5000);
+        }
+
+        async function analyze() {
+            const r = parseFloat(document.getElementById('r').value);
+            const x0 = parseFloat(document.getElementById('x0').value);
+            const nIter = parseInt(document.getElementById('n_iter').value);
+            const btn = document.getElementById('analyzeBtn');
+            
+            const validationErrors = validateInputs(r, x0, nIter);
+            if (validationErrors.length > 0) {
+                showError(validationErrors.join('<br>'));
+                return;
+            }
+            
+            const existingError = document.getElementById('errorMessage');
+            if (existingError) existingError.remove();
+            
+            btn.disabled = true;
+            btn.textContent = '计算中...';
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ r, x0, n_iterations: nIter })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Server error:', errorData);
+                    throw new Error(errorData.error || '服务器错误');
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                updateLyapunovDisplay(data.lyapunov_exponent);
+                plotTimeSeries(data.time_series);
+                
+                document.getElementById('resultPanel').style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('计算出错: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '重新计算';
+            }
+        }
+
+        function updateLyapunovDisplay(lyapunov) {
+            const valueEl = document.getElementById('lyapunovValue');
+            const statusEl = document.getElementById('lyapunovStatus');
+            
+            valueEl.textContent = lyapunov.toFixed(6);
+            
+            if (lyapunov > 0) {
+                statusEl.textContent = '✓ 混沌状态';
+                statusEl.className = 'lyapunov-status status-chaotic';
+            } else {
+                statusEl.textContent = '✓ 稳定状态';
+                statusEl.className = 'lyapunov-status status-stable';
+            }
+        }
+
+        function plotTimeSeries(series) {
+            const trace = {
+                x: Array.from({ length: series.length }, (_, i) => i),
+                y: series,
+                mode: 'lines+markers',
+                name: 'xₙ',
+                line: { color: '#e94560', width: 2 },
+                marker: { size: 4, color: '#e94560' }
+            };
+            
+            const layout = {
+                ...plotLayout,
+                xaxis: { ...plotLayout.xaxis, title: '迭代次数 n' },
+                yaxis: { ...plotLayout.yaxis, title: 'xₙ', range: [0, 1] }
+            };
+            
+            Plotly.newPlot('timeSeriesChart', [trace], layout, { responsive: true });
+        }
+
+        async function loadBifurcation() {
+            try {
+                const response = await fetch('/api/bifurcation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ r_min: 0, r_max: 4, r_steps: 500 })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Server error:', errorData);
+                    throw new Error(errorData.error || '服务器错误');
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                plotBifurcation(data.bifurcation_r, data.bifurcation_x);
+                plotLyapunovVsR(data.lyapunov_r, data.lyapunov_values);
+            } catch (error) {
+                console.error('Error loading bifurcation:', error);
+            }
+        }
+
+        function plotBifurcation(rValues, xValues) {
+            const trace = {
+                x: rValues,
+                y: xValues,
+                mode: 'markers',
+                type: 'scatter',
+                marker: { size: 1, color: '#e94560', opacity: 0.6 },
+                name: '吸引子'
+            };
+            
+            const layout = {
+                ...plotLayout,
+                xaxis: { ...plotLayout.xaxis, title: '参数 r' },
+                yaxis: { ...plotLayout.yaxis, title: 'x', range: [0, 1] }
+            };
+            
+            Plotly.newPlot('bifurcationChart', [trace], layout, { responsive: true });
+        }
+
+        function plotLyapunovVsR(rValues, lyapunovValues) {
+            const trace = {
+                x: rValues,
+                y: lyapunovValues,
+                mode: 'lines',
+                name: 'Lyapunov 指数',
+                line: { color: '#e94560', width: 2 }
+            };
+            
+            const zeroLine = {
+                x: rValues,
+                y: Array(rValues.length).fill(0),
+                mode: 'lines',
+                name: 'λ=0',
+                line: { color: '#4ecdc4', width: 1, dash: 'dash' }
+            };
+            
+            const layout = {
+                ...plotLayout,
+                xaxis: { ...plotLayout.xaxis, title: '参数 r' },
+                yaxis: { ...plotLayout.yaxis, title: 'Lyapunov 指数 λ' },
+                showlegend: true,
+                legend: { font: { color: '#fff' } }
+            };
+            
+            Plotly.newPlot('lyapunovChart', [trace, zeroLine], layout, { responsive: true });
+        }
+
+        document.getElementById('analyzeBtn').addEventListener('click', analyze);
+
+        window.onload = function() {
+            analyze();
+            loadBifurcation();
+        };
+
+        window.addEventListener('resize', () => {
+            Plotly.Plots.resize('timeSeriesChart');
+            Plotly.Plots.resize('bifurcationChart');
+            Plotly.Plots.resize('lyapunovChart');
+        });
+    </script>
+</body>
+</html>

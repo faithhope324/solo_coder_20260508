@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商销售数据仪表板</title>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .filter-section {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .filter-section.active {
+            display: block;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .filter-group input {
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .summary-section {
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .summary-section.active {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .summary-card .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .summary-card.sales .icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .summary-card.orders .icon { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .summary-card.avg .icon { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); }
+        .summary-card.category .icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .summary-card.region .icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+
+        .summary-card .label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .summary-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .charts-section {
+            display: none;
+            gap: 20px;
+        }
+
+        .charts-section.active {
+            display: grid;
+        }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .chart-container {
+            min-height: 400px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .chart-container.full-height {
+            min-height: 500px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .file-info .name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .file-info .meta {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .chart-row {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .heatmap-message {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #666;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 电商销售数据仪表板</h1>
+            <p>上传CSV文件，可视化您的销售数据</p>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">点击或拖拽CSV文件到此处上传</div>
+                <div class="upload-hint">支持的字段：订单日期、产品类别、销售额、数量、地区</div>
+                <input type="file" id="fileInput" accept=".csv">
+            </div>
+            <div id="fileInfo" class="file-info" style="display: none;">
+                <span>📄</span>
+                <div>
+                    <div class="name" id="fileName"></div>
+                    <div class="meta" id="fileMeta"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-section" id="filterSection">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>开始日期</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="filter-group">
+                    <label>结束日期</label>
+                    <input type="date" id="endDate">
+                </div>
+                <div class="filter-group" style="justify-content: flex-end;">
+                    <button class="btn btn-primary" id="filterBtn">应用筛选</button>
+                </div>
+                <div class="filter-group" style="justify-content: flex-end;">
+                    <button class="btn btn-secondary" id="resetBtn">重置</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在处理数据...</p>
+        </div>
+
+        <div class="summary-section" id="summarySection">
+            <div class="summary-card sales">
+                <div class="icon">💰</div>
+                <div class="label">总销售额</div>
+                <div class="value" id="totalSales">¥0</div>
+            </div>
+            <div class="summary-card orders">
+                <div class="icon">📦</div>
+                <div class="label">总订单数量</div>
+                <div class="value" id="totalOrders">0</div>
+            </div>
+            <div class="summary-card avg">
+                <div class="icon">📈</div>
+                <div class="label">平均销售额</div>
+                <div class="value" id="avgSales">¥0</div>
+            </div>
+            <div class="summary-card category">
+                <div class="icon">🏷️</div>
+                <div class="label">最畅销类别</div>
+                <div class="value" id="topCategory">-</div>
+            </div>
+            <div class="summary-card region">
+                <div class="icon">📍</div>
+                <div class="label">最畅销地区</div>
+                <div class="value" id="topRegion">-</div>
+            </div>
+        </div>
+
+        <div class="charts-section" id="chartsSection">
+            <div class="chart-card full-width">
+                <div class="chart-title">📈 月度销售额趋势</div>
+                <div class="chart-container" id="trendChart"></div>
+            </div>
+            <div class="chart-row">
+                <div class="chart-card">
+                    <div class="chart-title">🥧 类别销售额占比</div>
+                    <div class="chart-container" id="pieChart"></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">🗺️ 地区销售热力图</div>
+                    <div class="chart-container full-height" id="heatmapChart"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let dataLoaded = false;
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileMeta = document.getElementById('fileMeta');
+        const filterSection = document.getElementById('filterSection');
+        const summarySection = document.getElementById('summarySection');
+        const chartsSection = document.getElementById('chartsSection');
+        const loading = document.getElementById('loading');
+        const alert = document.getElementById('alert');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        document.getElementById('filterBtn').addEventListener('click', loadCharts);
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            loadCharts();
+        });
+
+        function showAlert(message, type) {
+            alert.textContent = message;
+            alert.className = `alert ${type} show`;
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+
+        function formatCurrency(num) {
+            return '¥' + num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.csv')) {
+                showAlert('请上传CSV文件', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            loading.classList.add('show');
+            uploadArea.style.display = 'none';
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.classList.remove('show');
+                
+                if (data.success) {
+                    dataLoaded = true;
+                    
+                    fileName.textContent = file.name;
+                    fileMeta.textContent = `共 ${data.total_records} 条记录，时间范围: ${data.min_date} ~ ${data.max_date}`;
+                    fileInfo.style.display = 'flex';
+                    uploadArea.style.display = 'block';
+                    
+                    document.getElementById('startDate').min = data.min_date;
+                    document.getElementById('startDate').max = data.max_date;
+                    document.getElementById('endDate').min = data.min_date;
+                    document.getElementById('endDate').max = data.max_date;
+                    
+                    filterSection.classList.add('active');
+                    
+                    showAlert('文件上传成功！', 'success');
+                    loadCharts();
+                } else {
+                    uploadArea.style.display = 'block';
+                    showAlert(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                loading.classList.remove('show');
+                uploadArea.style.display = 'block';
+                showAlert('上传失败，请重试', 'error');
+                console.error('Error:', error);
+            });
+        }
+
+        function loadCharts() {
+            if (!dataLoaded) return;
+
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            loading.classList.add('show');
+
+            let url = '/charts';
+            if (startDate && endDate) {
+                url += `?start_date=${startDate}&end_date=${endDate}`;
+            }
+
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                loading.classList.remove('show');
+                
+                if (data.success) {
+                    const summary = data.summary;
+                    document.getElementById('totalSales').textContent = formatCurrency(summary.total_sales);
+                    document.getElementById('totalOrders').textContent = summary.total_orders.toLocaleString();
+                    document.getElementById('avgSales').textContent = formatCurrency(summary.avg_sales);
+                    document.getElementById('topCategory').textContent = summary.top_category;
+                    document.getElementById('topRegion').textContent = summary.top_region;
+                    
+                    summarySection.classList.add('active');
+                    chartsSection.classList.add('active');
+                    
+                    const trendLayout = {
+                        ...data.trend.layout,
+                        height: 400,
+                        margin: { t: 60, b: 60, l: 80, r: 40 }
+                    };
+                    Plotly.newPlot('trendChart', data.trend.data, trendLayout, { responsive: true, displayModeBar: true });
+                    
+                    const pieLayout = {
+                        ...data.pie.layout,
+                        height: 380,
+                        legend: {
+                            ...data.pie.layout.legend,
+                            y: 0.5,
+                            x: 0.98
+                        }
+                    };
+                    Plotly.newPlot('pieChart', data.pie.data, pieLayout, { responsive: true, displayModeBar: true });
+                    
+                    const heatmapDiv = document.getElementById('heatmapChart');
+                    if (data.heatmap.empty) {
+                        heatmapDiv.innerHTML = `<div class="heatmap-message">${data.heatmap.message}</div>`;
+                    } else {
+                        const heatmapData = JSON.parse(data.heatmap.data);
+                        const heatmapLayout = {
+                            ...heatmapData.layout,
+                            height: 500,
+                            geo: {
+                                ...heatmapData.layout.geo,
+                                projection: {
+                                    type: 'mercator',
+                                    scale: 4.5
+                                }
+                            }
+                        };
+                        Plotly.newPlot('heatmapChart', heatmapData.data, heatmapLayout, { 
+                            responsive: true, 
+                            displayModeBar: true,
+                            modeBarButtonsToRemove: ['lasso2d', 'select2d']
+                        });
+                    }
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                loading.classList.remove('show');
+                showAlert('加载图表失败，请重试', 'error');
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>

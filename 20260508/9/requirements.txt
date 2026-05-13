@@ -1,0 +1,6 @@
+Flask
+PyJWT
+pymongo
+passlib
+python-dotenv
+Flask-CORS

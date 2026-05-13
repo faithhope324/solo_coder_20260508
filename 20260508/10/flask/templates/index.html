@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日志分析统计</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-5">日志分析统计</h1>
+        
+        <div class="row">
+            <!-- 每小时请求量 -->
+            <div class="col-md-6 mb-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>每小时请求量</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="requestCountChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 每小时平均响应时间 -->
+            <div class="col-md-6 mb-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>每小时平均响应时间 (秒)</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="responseTimeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 每小时成功和错误请求 -->
+            <div class="col-md-6 mb-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>每小时成功和错误请求</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 每小时按路径分组的请求量 -->
+            <div class="col-md-6 mb-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>每小时按路径分组的请求量</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="pathChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 获取数据并绘制图表
+        async function loadData() {
+            // 获取每小时指标数据
+            const hourlyMetricsResponse = await fetch('/api/hourly-metrics');
+            const hourlyMetrics = await hourlyMetricsResponse.json();
+            
+            // 获取每小时路径指标数据
+            const pathMetricsResponse = await fetch('/api/path-metrics');
+            const pathMetrics = await pathMetricsResponse.json();
+            
+            // 绘制每小时请求量图表
+            drawRequestCountChart(hourlyMetrics);
+            
+            // 绘制每小时平均响应时间图表
+            drawResponseTimeChart(hourlyMetrics);
+            
+            // 绘制每小时成功和错误请求图表
+            drawStatusChart(hourlyMetrics);
+            
+            // 绘制每小时按路径分组的请求量图表
+            drawPathChart(pathMetrics);
+        }
+        
+        // 绘制每小时请求量图表
+        function drawRequestCountChart(data) {
+            const labels = data.map(item => `${item.date} ${item.hour}:00`);
+            const requestCounts = data.map(item => item.request_count);
+            
+            const ctx = document.getElementById('requestCountChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '请求量',
+                        data: requestCounts,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 绘制每小时平均响应时间图表
+        function drawResponseTimeChart(data) {
+            const labels = data.map(item => `${item.date} ${item.hour}:00`);
+            const avgResponseTimes = data.map(item => item.avg_response_time);
+            
+            const ctx = document.getElementById('responseTimeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '平均响应时间 (秒)',
+                        data: avgResponseTimes,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 绘制每小时成功和错误请求图表
+        function drawStatusChart(data) {
+            const labels = data.map(item => `${item.date} ${item.hour}:00`);
+            const successCounts = data.map(item => item.success_count);
+            const errorCounts = data.map(item => item.error_count);
+            
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '成功请求',
+                            data: successCounts,
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '错误请求',
+                            data: errorCounts,
+                            backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 绘制每小时按路径分组的请求量图表
+        function drawPathChart(data) {
+            // 提取所有唯一的路径
+            const paths = [...new Set(data.map(item => item.path))];
+            
+            // 提取所有唯一的日期和小时组合
+            const timePoints = [...new Set(data.map(item => `${item.date} ${item.hour}:00`))].sort();
+            
+            // 为每个路径准备数据
+            const datasets = paths.map((path, index) => {
+                const colors = [
+                    'rgba(255, 99, 132, 0.6)',
+                    'rgba(54, 162, 235, 0.6)',
+                    'rgba(255, 206, 86, 0.6)',
+                    'rgba(75, 192, 192, 0.6)',
+                    'rgba(153, 102, 255, 0.6)',
+                    'rgba(255, 159, 64, 0.6)',
+                    'rgba(199, 199, 199, 0.6)',
+                    'rgba(83, 102, 255, 0.6)'
+                ];
+                
+                const borderColors = [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(199, 199, 199, 1)',
+                    'rgba(83, 102, 255, 1)'
+                ];
+                
+                const pathData = timePoints.map(timePoint => {
+                    const [date, time] = timePoint.split(' ');
+                    const hour = parseInt(time.split(':')[0]);
+                    const item = data.find(d => d.date === date && d.hour === hour && d.path === path);
+                    return item ? item.request_count : 0;
+                });
+                
+                return {
+                    label: path,
+                    data: pathData,
+                    backgroundColor: colors[index % colors.length],
+                    borderColor: borderColors[index % borderColors.length],
+                    borderWidth: 1
+                };
+            });
+            
+            const ctx = document.getElementById('pathChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: timePoints,
+                    datasets: datasets
+                },
+                options: {
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 页面加载完成后加载数据
+        window.onload = loadData;
+    </script>
+</body>
+</html>

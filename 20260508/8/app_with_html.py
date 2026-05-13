@@ -1,0 +1,259 @@
+from flask import Flask, request, jsonify
+import numpy as np
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return '''
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>倒立摆控制</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                background-color: #f0f0f0;
+            }
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                background-color: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+            canvas {
+                border: 1px solid #ddd;
+                background-color: #f9f9f9;
+                display: block;
+                margin: 20px auto;
+            }
+            .controls {
+                text-align: center;
+                margin: 20px 0;
+            }
+            button {
+                padding: 10px 20px;
+                margin: 0 10px;
+                font-size: 16px;
+                cursor: pointer;
+                border: none;
+                border-radius: 4px;
+                background-color: #4CAF50;
+                color: white;
+            }
+            button:hover {
+                background-color: #45a049;
+            }
+            .status {
+                text-align: center;
+                margin: 20px 0;
+                font-size: 18px;
+            }
+            .instructions {
+                text-align: center;
+                margin: 20px 0;
+                font-size: 14px;
+                color: #666;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>倒立摆控制</h1>
+            <div class="instructions">
+                <p>使用左右方向键手动控制小车</p>
+                <p>或点击"开始自动控制"让AI控制</p>
+                <p>得分说明：每保持倒立摆平衡1步得1分，得分越高表示平衡能力越强</p>
+            </div>
+            <canvas id="cartpoleCanvas" width="600" height="400"></canvas>
+            <div class="controls">
+                <button id="startAuto">开始自动控制</button>
+                <button id="stopAuto">停止自动控制</button>
+                <button id="reset">重置</button>
+            </div>
+            <div class="status">
+                <p>状态：<span id="statusText">准备就绪</span></p>
+                <p>得分：<span id="score">0</span></p>
+            </div>
+        </div>
+
+        <script>
+            // Canvas setup
+            const canvas = document.getElementById('cartpoleCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // CartPole parameters
+            let state = [0, 0, 0, 0]; // x, x_dot, theta, theta_dot
+            let score = 0;
+            let isAutoControlling = false;
+            let animationId;
+            
+            // Physics constants
+            const g = 9.8;
+            const massCart = 1.0;
+            const massPole = 0.1;
+            const totalMass = massCart + massPole;
+            const length = 0.5; // half the pole length
+            const forceMag = 10.0;
+            const tau = 0.02; // seconds between state updates
+            
+            // Canvas drawing parameters
+            const cartWidth = 100;
+            const cartHeight = 50;
+            const poleLength = 150;
+            const poleWidth = 10;
+            const cartColor = '#3498db';
+            const poleColor = '#e74c3c';
+            const trackColor = '#95a5a6';
+            
+            // Initialize
+            reset();
+            draw();
+            
+            // Event listeners
+            document.getElementById('startAuto').addEventListener('click', startAutoControl);
+            document.getElementById('stopAuto').addEventListener('click', stopAutoControl);
+            document.getElementById('reset').addEventListener('click', reset);
+            
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (isAutoControlling) return;
+                
+                if (e.key === 'ArrowLeft') {
+                    step(0); // left
+                } else if (e.key === 'ArrowRight') {
+                    step(1); // right
+                }
+            });
+            
+            // Reset function
+            function reset() {
+                state = [0, 0, 0, 0];
+                score = 0;
+                document.getElementById('score').textContent = score;
+                document.getElementById('statusText').textContent = '准备就绪';
+                stopAutoControl();
+            }
+            
+            // Start auto control
+            function startAutoControl() {
+                isAutoControlling = true;
+                document.getElementById('statusText').textContent = '自动控制中';
+                autoControlStep();
+            }
+            
+            // Stop auto control
+            function stopAutoControl() {
+                isAutoControlling = false;
+                document.getElementById('statusText').textContent = '已停止自动控制';
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            }
+            
+            // Auto control step
+            function autoControlStep() {
+                if (!isAutoControlling) return;
+                
+                // 尝试从服务器获取动作
+                fetch('/get_action', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ state: state })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    step(data.action);
+                    animationId = requestAnimationFrame(autoControlStep);
+                })
+                .catch(error => {
+                    console.log('使用本地策略作为 fallback');
+                    // 使用简单的本地策略作为 fallback
+                    const [x, x_dot, theta, theta_dot] = state;
+                    // 基于角度和角速度的简单策略
+                    const action = (theta + theta_dot) > 0 ? 1 : 0;
+                    step(action);
+                    animationId = requestAnimationFrame(autoControlStep);
+                });
+            }
+            
+            // Step function (physics simulation)
+            function step(action) {
+                const [x, x_dot, theta, theta_dot] = state;
+                
+                const force = action === 1 ? forceMag : -forceMag;
+                const cosTheta = Math.cos(theta);
+                const sinTheta = Math.sin(theta);
+                
+                const temp = (force + massPole * length * theta_dot * theta_dot * sinTheta) / totalMass;
+                const thetaAcc = (g * sinTheta - cosTheta * temp) / (length * (4/3 - massPole * cosTheta * cosTheta / totalMass));
+                const xAcc = temp - massPole * length * thetaAcc * cosTheta / totalMass;
+                
+                const newX = x + tau * x_dot;
+                const newXdot = x_dot + tau * xAcc;
+                const newTheta = theta + tau * theta_dot;
+                const newThetadot = theta_dot + tau * thetaAcc;
+                
+                state = [newX, newXdot, newTheta, newThetadot];
+                score++;
+                document.getElementById('score').textContent = score;
+                
+                // Check if episode is done
+                const done = newX < -2.4 || newX > 2.4 || newTheta < -Math.PI/12 || newTheta > Math.PI/12;
+                if (done) {
+                    document.getElementById('statusText').textContent = '游戏结束';
+                    stopAutoControl();
+                }
+                
+                draw();
+            }
+            
+            // Draw function
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw track
+                ctx.fillStyle = trackColor;
+                ctx.fillRect(50, canvas.height - 50, canvas.width - 100, 10);
+                
+                // Calculate cart position
+                const cartX = canvas.width / 2 + state[0] * 100;
+                const cartY = canvas.height - 50 - cartHeight;
+                
+                // Draw cart
+                ctx.fillStyle = cartColor;
+                ctx.fillRect(cartX - cartWidth/2, cartY, cartWidth, cartHeight);
+                
+                // Calculate pole position
+                const poleEndX = cartX + Math.sin(state[2]) * poleLength;
+                const poleEndY = cartY + Math.cos(state[2]) * poleLength;
+                
+                // Draw pole
+                ctx.strokeStyle = poleColor;
+                ctx.lineWidth = poleWidth;
+                ctx.beginPath();
+                ctx.moveTo(cartX, cartY);
+                ctx.lineTo(poleEndX, poleEndY);
+                ctx.stroke();
+            }
+        </script>
+    </body>
+    </html>
+    '''
+
+@app.route('/get_action', methods=['POST'])
+def get_action():
+    data = request.json
+    # 简单的随机策略
+    action = np.random.randint(0, 2)
+    return jsonify({'action': int(action)})
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)

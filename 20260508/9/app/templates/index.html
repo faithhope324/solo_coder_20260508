@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识库系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .nav-link {
+            cursor: pointer;
+        }
+        .markdown-content {
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 0.5rem;
+            background-color: #f9f9f9;
+        }
+        .markdown-content pre {
+            background-color: #f4f4f4;
+            padding: 1rem;
+            border-radius: 0.3rem;
+            overflow-x: auto;
+        }
+        .markdown-content code {
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .markdown-content ul, .markdown-content ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+        .markdown-content blockquote {
+            border-left: 4px solid #ddd;
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: #666;
+        }
+        .article-card {
+            transition: transform 0.3s ease;
+        }
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">知识库系统</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" id="home-link">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="create-link">发布文章</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="profile-link">个人主页</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <div class="me-3" id="user-info" style="display: none;">
+                        <span class="text-light" id="user-name"></span>
+                    </div>
+                    <a class="btn btn-outline-light" id="login-link">登录</a>
+                    <a class="btn btn-light ms-2" id="register-link" style="display: none;">注册</a>
+                    <a class="btn btn-outline-danger ms-2" id="logout-link" style="display: none;">退出</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- 登录模态框 -->
+        <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="loginModalLabel">登录</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="loginEmail" class="form-label">邮箱</label>
+                                <input type="email" class="form-control" id="loginEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="loginPassword" class="form-label">密码</label>
+                                <input type="password" class="form-control" id="loginPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">登录</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 注册模态框 -->
+        <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="registerModalLabel">注册</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="registerForm">
+                            <div class="mb-3">
+                                <label for="registerName" class="form-label">姓名</label>
+                                <input type="text" class="form-control" id="registerName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="registerEmail" class="form-label">邮箱</label>
+                                <input type="email" class="form-control" id="registerEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="registerPassword" class="form-label">密码</label>
+                                <input type="password" class="form-control" id="registerPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">注册</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容区域 -->
+        <div id="content">
+            <!-- 首页内容 -->
+            <div id="home-content">
+                <div class="mb-4">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="search-input" placeholder="搜索文章...">
+                        <button class="btn btn-primary" id="search-button">搜索</button>
+                    </div>
+                </div>
+                <div id="articles-list" class="row">
+                    <!-- 文章列表将通过JavaScript动态添加 -->
+                </div>
+            </div>
+
+            <!-- 发布文章内容 -->
+            <div id="create-content" style="display: none;">
+                <h2>发布文章</h2>
+                <form id="createArticleForm">
+                    <div class="mb-3">
+                        <label for="articleTitle" class="form-label">标题</label>
+                        <input type="text" class="form-control" id="articleTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="articleContent" class="form-label">内容（Markdown格式）</label>
+                        <textarea class="form-control" id="articleContent" rows="10" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <h5>预览</h5>
+                        <div id="markdown-preview" class="markdown-content"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">发布</button>
+                </form>
+            </div>
+
+            <!-- 个人主页内容 -->
+            <div id="profile-content" style="display: none;">
+                <h2>我的文章</h2>
+                <div id="user-articles-list" class="row">
+                    <!-- 个人文章列表将通过JavaScript动态添加 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-html.min.js"></script>
+    <script>
+        // 全局变量
+        let currentUser = null;
+        let token = null;
+        let loginModal = null;
+        let registerModal = null;
+
+        // 全局DOM元素变量
+        let loginLink, registerLink, logoutLink, userInfo, userName;
+        let homeLink, createLink, profileLink;
+        let homeContent, createContent, profileContent;
+        let loginForm, registerForm, createArticleForm;
+        let searchInput, searchButton, articlesList, userArticlesList;
+        let articleContent, markdownPreview;
+
+        // 邮箱格式验证
+        function validateEmail(email) {
+            // 修复中文句号问题，先替换为英文句号
+            let normalizedEmail = email.replace(/。/g, '.');
+            // 标准邮箱格式正则
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return {
+                isValid: emailRegex.test(normalizedEmail),
+                normalizedEmail: normalizedEmail
+            };
+        }
+
+        // 初始化
+        function init() {
+            console.log('Initializing app...');
+            
+            // 获取DOM元素（赋值给全局变量）
+            loginLink = document.getElementById('login-link');
+            registerLink = document.getElementById('register-link');
+            logoutLink = document.getElementById('logout-link');
+            userInfo = document.getElementById('user-info');
+            userName = document.getElementById('user-name');
+            homeLink = document.getElementById('home-link');
+            createLink = document.getElementById('create-link');
+            profileLink = document.getElementById('profile-link');
+            homeContent = document.getElementById('home-content');
+            createContent = document.getElementById('create-content');
+            profileContent = document.getElementById('profile-content');
+            loginForm = document.getElementById('loginForm');
+            registerForm = document.getElementById('registerForm');
+            createArticleForm = document.getElementById('createArticleForm');
+            searchInput = document.getElementById('search-input');
+            searchButton = document.getElementById('search-button');
+            articlesList = document.getElementById('articles-list');
+            userArticlesList = document.getElementById('user-articles-list');
+            articleContent = document.getElementById('articleContent');
+            markdownPreview = document.getElementById('markdown-preview');
+
+            // 创建模态框
+            const loginModalElement = document.getElementById('loginModal');
+            const registerModalElement = document.getElementById('registerModal');
+            if (loginModalElement) {
+                loginModal = new bootstrap.Modal(loginModalElement);
+                console.log('Login modal created');
+            }
+            if (registerModalElement) {
+                registerModal = new bootstrap.Modal(registerModalElement);
+                console.log('Register modal created');
+            }
+
+            // 从本地存储加载用户信息
+            function loadUserFromLocalStorage() {
+                try {
+                    const storedUser = localStorage.getItem('user');
+                    const storedToken = localStorage.getItem('token');
+                    if (storedUser && storedToken) {
+                        currentUser = JSON.parse(storedUser);
+                        token = storedToken;
+                        console.log('User loaded from localStorage:', currentUser);
+                    }
+                } catch (e) {
+                    console.error('Error loading from localStorage:', e);
+                }
+            }
+
+            // 保存用户信息到本地存储
+            function saveUserToLocalStorage(user, token) {
+                try {
+                    localStorage.setItem('user', JSON.stringify(user));
+                    localStorage.setItem('token', token);
+                } catch (e) {
+                    console.error('Error saving to localStorage:', e);
+                }
+            }
+
+            // 从本地存储移除用户信息
+            function removeUserFromLocalStorage() {
+                try {
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('token');
+                } catch (e) {
+                    console.error('Error removing from localStorage:', e);
+                }
+            }
+
+            // 更新UI
+            function updateUI() {
+                if (!userInfo || !userName || !loginLink || !registerLink || !logoutLink) return;
+                
+                if (currentUser) {
+                    // 已登录状态
+                    userInfo.style.display = 'block';
+                    userName.textContent = currentUser.name;
+                    loginLink.style.display = 'none';
+                    registerLink.style.display = 'none';
+                    logoutLink.style.display = 'block';
+                    console.log('UI updated: logged in');
+                } else {
+                    // 未登录状态
+                    userInfo.style.display = 'none';
+                    loginLink.style.display = 'block';
+                    registerLink.style.display = 'block';
+                    logoutLink.style.display = 'none';
+                    console.log('UI updated: not logged in');
+                }
+            }
+
+            // 切换内容区域
+            function switchContent(contentId) {
+                if (!homeContent || !createContent || !profileContent) return;
+                
+                // 隐藏所有内容
+                homeContent.style.display = 'none';
+                createContent.style.display = 'none';
+                profileContent.style.display = 'none';
+
+                // 显示选中的内容
+                const targetContent = document.getElementById(contentId + '-content');
+                if (targetContent) {
+                    targetContent.style.display = 'block';
+                }
+
+                // 如果切换到个人主页，加载用户文章
+                if (contentId === 'profile' && currentUser) {
+                    loadUserArticles();
+                }
+            }
+
+            // 加载文章列表
+            function loadArticles() {
+                if (!articlesList) return;
+                
+                console.log('Loading articles...');
+                fetch('/articles/')
+                    .then(response => {
+                        console.log('Articles response status:', response.status);
+                        return response.json();
+                    })
+                    .then(articles => {
+                        console.log('Articles loaded:', articles.length);
+                        renderArticles(articles, articlesList);
+                    })
+                    .catch(error => {
+                        console.error('Error loading articles:', error);
+                    });
+            }
+
+            // 加载用户文章
+            function loadUserArticles() {
+                if (!currentUser || !userArticlesList) return;
+                
+                console.log('Loading user articles for:', currentUser.user_id);
+                fetch(`/articles/user/${currentUser.user_id}`)
+                    .then(response => response.json())
+                    .then(articles => {
+                        console.log('User articles loaded:', articles.length);
+                        renderArticles(articles, userArticlesList);
+                    })
+                    .catch(error => {
+                        console.error('Error loading user articles:', error);
+                    });
+            }
+
+            // 渲染文章列表
+            function renderArticles(articles, container) {
+                if (!container) return;
+                
+                container.innerHTML = '';
+                
+                if (articles.length === 0) {
+                    container.innerHTML = '<div class="col-12"><p class="text-center">暂无文章</p></div>';
+                    return;
+                }
+                
+                articles.forEach(article => {
+                    const articleCard = document.createElement('div');
+                    articleCard.className = 'col-md-4 mb-4';
+                    articleCard.innerHTML = `
+                        <div class="card article-card">
+                            <div class="card-body">
+                                <h5 class="card-title">${article.title}</h5>
+                                <p class="card-text text-muted">作者: ${article.author_name}</p>
+                                <p class="card-text text-muted">发布时间: ${new Date(article.created_at).toLocaleString()}</p>
+                                <p class="card-text">${article.content.substring(0, 100)}...</p>
+                                <button class="btn btn-sm btn-primary view-article" data-id="${article._id}">查看详情</button>
+                                ${currentUser && currentUser.user_id === article.author_id ? `
+                                    <button class="btn btn-sm btn-warning edit-article ms-2" data-id="${article._id}">编辑</button>
+                                    <button class="btn btn-sm btn-danger delete-article ms-2" data-id="${article._id}">删除</button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(articleCard);
+                });
+
+                // 添加查看文章事件
+                document.querySelectorAll('.view-article').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const articleId = this.getAttribute('data-id');
+                        viewArticle(articleId);
+                    });
+                });
+
+                // 添加编辑文章事件
+                document.querySelectorAll('.edit-article').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const articleId = this.getAttribute('data-id');
+                        editArticle(articleId);
+                    });
+                });
+
+                // 添加删除文章事件
+                document.querySelectorAll('.delete-article').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const articleId = this.getAttribute('data-id');
+                        deleteArticle(articleId);
+                    });
+                });
+            }
+
+            // 查看文章
+            function viewArticle(articleId) {
+                fetch(`/articles/${articleId}`)
+                    .then(response => response.json())
+                    .then(article => {
+                        // 创建文章详情模态框
+                        const modal = document.createElement('div');
+                        modal.className = 'modal fade';
+                        modal.id = 'articleModal';
+                        modal.tabIndex = -1;
+                        modal.innerHTML = `
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">${article.title}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="text-muted">作者: ${article.author_name}</p>
+                                        <p class="text-muted">发布时间: ${new Date(article.created_at).toLocaleString()}</p>
+                                        <div class="markdown-content">${marked.parse(article.content)}</div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        document.body.appendChild(modal);
+
+                        // 初始化并显示模态框
+                        const articleModal = new bootstrap.Modal(modal);
+                        articleModal.show();
+
+                        // 销毁模态框
+                        modal.addEventListener('hidden.bs.modal', function() {
+                            modal.remove();
+                        });
+
+                        // 高亮代码
+                        Prism.highlightAll();
+                    })
+                    .catch(error => {
+                        console.error('Error loading article:', error);
+                    });
+            }
+
+            // 编辑文章
+            function editArticle(articleId) {
+                fetch(`/articles/${articleId}`)
+                    .then(response => response.json())
+                    .then(article => {
+                        // 切换到创建文章页面
+                        switchContent('create');
+                        // 填充表单
+                        const articleTitle = document.getElementById('articleTitle');
+                        const articleContentInput = document.getElementById('articleContent');
+                        if (articleTitle) articleTitle.value = article.title;
+                        if (articleContentInput) articleContentInput.value = article.content;
+                        // 更新预览
+                        updateMarkdownPreview();
+                        // 保存文章ID
+                        if (createArticleForm) createArticleForm.dataset.articleId = articleId;
+                    })
+                    .catch(error => {
+                        console.error('Error loading article:', error);
+                    });
+            }
+
+            // 删除文章
+            function deleteArticle(articleId) {
+                if (confirm('确定要删除这篇文章吗？')) {
+                    fetch(`/articles/${articleId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            alert(data.message);
+                            // 重新加载文章列表
+                            loadArticles();
+                            loadUserArticles();
+                        } else {
+                            alert(data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting article:', error);
+                    });
+                }
+            }
+
+            // 更新Markdown预览
+            function updateMarkdownPreview() {
+                if (!articleContent || !markdownPreview) return;
+                
+                const content = articleContent.value;
+                markdownPreview.innerHTML = marked.parse(content);
+                // 高亮代码
+                Prism.highlightAll();
+            }
+
+            // 搜索文章
+            function searchArticles() {
+                if (!searchInput || !articlesList) return;
+                
+                const query = searchInput.value.trim();
+                if (!query) return;
+                
+                console.log('Searching for:', query);
+                fetch(`/articles/search?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(articles => {
+                        console.log('Search results:', articles.length);
+                        renderArticles(articles, articlesList);
+                    })
+                    .catch(error => {
+                        console.error('Error searching articles:', error);
+                    });
+            }
+
+            // 事件监听器
+            if (loginLink) {
+                loginLink.addEventListener('click', function() {
+                    console.log('Login link clicked');
+                    if (loginModal) {
+                        loginModal.show();
+                    } else {
+                        console.error('Login modal not initialized');
+                    }
+                });
+            }
+
+            if (registerLink) {
+                registerLink.addEventListener('click', function() {
+                    console.log('Register link clicked');
+                    if (registerModal) {
+                        registerModal.show();
+                    } else {
+                        console.error('Register modal not initialized');
+                    }
+                });
+            }
+
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function() {
+                    currentUser = null;
+                    token = null;
+                    removeUserFromLocalStorage();
+                    updateUI();
+                    switchContent('home');
+                });
+            }
+
+            if (homeLink) {
+                homeLink.addEventListener('click', function() {
+                    switchContent('home');
+                    loadArticles();
+                });
+            }
+
+            if (createLink) {
+                createLink.addEventListener('click', function() {
+                    if (!currentUser) {
+                        if (loginModal) loginModal.show();
+                        return;
+                    }
+                    // 重置表单
+                    if (createArticleForm) {
+                        createArticleForm.reset();
+                        delete createArticleForm.dataset.articleId;
+                    }
+                    updateMarkdownPreview();
+                    switchContent('create');
+                });
+            }
+
+            if (profileLink) {
+                profileLink.addEventListener('click', function() {
+                    if (!currentUser) {
+                        if (loginModal) loginModal.show();
+                        return;
+                    }
+                    switchContent('profile');
+                });
+            }
+
+            // 登录表单提交
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('Login form submitted');
+                    
+                    const emailInput = document.getElementById('loginEmail');
+                    const passwordInput = document.getElementById('loginPassword');
+                    if (!emailInput || !passwordInput) {
+                        console.error('Login form elements not found');
+                        return;
+                    }
+                    
+                    let email = emailInput.value;
+                    const password = passwordInput.value;
+
+                    // 邮箱格式验证
+                    const emailValidation = validateEmail(email);
+                    if (!emailValidation.isValid) {
+                        alert('请输入有效的邮箱地址，例如：user@qq.com');
+                        return;
+                    }
+                    // 使用标准化后的邮箱（中文句号已替换为英文句号）
+                    email = emailValidation.normalizedEmail;
+                    emailInput.value = email;
+
+                    console.log('Sending login request:', { email });
+                    fetch('/auth/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, password })
+                    })
+                    .then(response => {
+                        console.log('Login response status:', response.status);
+                        return response.json().catch(() => ({ error: '服务器响应格式错误' }));
+                    })
+                    .then(data => {
+                        console.log('Login response data:', data);
+                        if (data.token) {
+                            currentUser = {
+                                user_id: data.user_id,
+                                name: data.name,
+                                email: data.email
+                            };
+                            token = data.token;
+                            saveUserToLocalStorage(currentUser, token);
+                            updateUI();
+                            if (loginModal) loginModal.hide();
+                            loadArticles();
+                            console.log('Login successful');
+                        } else {
+                            let errorMessage = data.error || '登录失败';
+                            // 提供更具体的错误提示
+                            if (data.error === 'Invalid email or password') {
+                                errorMessage = '邮箱或密码错误，请检查后重试';
+                            } else if (data.error === 'Missing required fields') {
+                                errorMessage = '请填写邮箱和密码';
+                            } else if (data.error && data.error.includes('email')) {
+                                errorMessage = data.error;
+                            }
+                            alert(errorMessage);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error logging in:', error);
+                        let errorMessage = '登录时发生错误，请稍后重试';
+                        if (error.message) {
+                            errorMessage = `登录时发生错误：${error.message}`;
+                        }
+                        alert(errorMessage);
+                    });
+                });
+            }
+
+            // 注册表单提交
+            if (registerForm) {
+                registerForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('Register form submitted');
+                    
+                    const nameInput = document.getElementById('registerName');
+                    const emailInput = document.getElementById('registerEmail');
+                    const passwordInput = document.getElementById('registerPassword');
+                    if (!nameInput || !emailInput || !passwordInput) {
+                        console.error('Register form elements not found');
+                        return;
+                    }
+                    
+                    const name = nameInput.value;
+                    let email = emailInput.value;
+                    const password = passwordInput.value;
+
+                    // 邮箱格式验证
+                    const emailValidation = validateEmail(email);
+                    if (!emailValidation.isValid) {
+                        alert('请输入有效的邮箱地址，例如：user@qq.com');
+                        return;
+                    }
+                    // 使用标准化后的邮箱（中文句号已替换为英文句号）
+                    email = emailValidation.normalizedEmail;
+                    emailInput.value = email;
+
+                    // 密码长度验证
+                    if (password.length < 6) {
+                        alert('密码长度至少为6位');
+                        return;
+                    }
+
+                    console.log('Sending register request:', { name, email });
+                    fetch('/auth/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ name, email, password })
+                    })
+                    .then(response => {
+                        console.log('Register response status:', response.status);
+                        return response.json().catch(() => ({ error: '服务器响应格式错误' }));
+                    })
+                    .then(data => {
+                        console.log('Register response data:', data);
+                        if (data.token) {
+                            currentUser = {
+                                user_id: data.user_id,
+                                name: data.name,
+                                email: data.email
+                            };
+                            token = data.token;
+                            saveUserToLocalStorage(currentUser, token);
+                            updateUI();
+                            if (registerModal) registerModal.hide();
+                            loadArticles();
+                            console.log('Register successful');
+                        } else {
+                            let errorMessage = data.error || '注册失败';
+                            // 提供更具体的错误提示
+                            if (data.error === 'Email already exists') {
+                                errorMessage = '该邮箱已被注册，请使用其他邮箱';
+                            } else if (data.error === 'Missing required fields') {
+                                errorMessage = '请填写姓名、邮箱和密码';
+                            } else if (data.error === 'Password must be at least 6 characters') {
+                                errorMessage = '密码长度至少为6位';
+                            } else if (data.error && data.error.includes('email')) {
+                                errorMessage = '邮箱格式错误，请输入有效的邮箱地址';
+                            }
+                            alert(errorMessage);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error registering:', error);
+                        let errorMessage = '注册时发生错误，请稍后重试';
+                        if (error.message) {
+                            errorMessage = `注册时发生错误：${error.message}`;
+                        }
+                        alert(errorMessage);
+                    });
+                });
+            }
+
+            // 创建文章表单提交
+            if (createArticleForm) {
+                createArticleForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const articleTitle = document.getElementById('articleTitle');
+                    const articleContentInput = document.getElementById('articleContent');
+                    if (!articleTitle || !articleContentInput) return;
+                    
+                    const title = articleTitle.value;
+                    const content = articleContentInput.value;
+                    const articleId = this.dataset.articleId;
+
+                    const url = articleId ? `/articles/${articleId}` : '/articles/';
+                    const method = articleId ? 'PUT' : 'POST';
+
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ title, content })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.id || data._id) {
+                            alert('文章保存成功！');
+                            switchContent('home');
+                            loadArticles();
+                        } else {
+                            alert(data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving article:', error);
+                    });
+                });
+            }
+
+            // 搜索按钮点击
+            if (searchButton) {
+                searchButton.addEventListener('click', searchArticles);
+            }
+
+            // 搜索输入框回车
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchArticles();
+                    }
+                });
+            }
+
+            // Markdown实时预览
+            if (articleContent) {
+                articleContent.addEventListener('input', updateMarkdownPreview);
+            }
+
+            // 初始化
+            loadUserFromLocalStorage();
+            updateUI();
+            loadArticles();
+        }
+
+        // 等待DOM加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>

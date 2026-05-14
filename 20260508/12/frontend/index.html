@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线聚类可视化</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        .sidebar {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #667eea;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        select, input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .chart-area {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .chart-container {
+            position: relative;
+            height: 600px;
+            width: 100%;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .view-toggle button {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .view-toggle button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 在线聚类可视化</h1>
+            <p class="subtitle">上传CSV数据，使用DBSCAN/HDBSCAN聚类，UMAP降维可视化</p>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="section">
+                    <h3 class="section-title">📁 数据上传</h3>
+                    <div class="form-group">
+                        <label for="csvFile">选择CSV文件</label>
+                        <input type="file" id="csvFile" accept=".csv">
+                    </div>
+                    <button class="btn" id="uploadBtn">上传并分析</button>
+                    <div id="uploadError" class="error"></div>
+                </div>
+
+                <div class="section" id="paramsSection" style="display: none;">
+                    <h3 class="section-title">⚙️ 聚类参数</h3>
+                    <div class="form-group">
+                        <label for="algorithm">聚类算法</label>
+                        <select id="algorithm">
+                            <option value="dbscan">DBSCAN</option>
+                            <option value="hdbscan">HDBSCAN</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="epsGroup">
+                        <label for="eps">Eps (ε): <span id="epsValue">0.5</span></label>
+                        <input type="number" id="eps" step="0.01" min="0.01" max="10" value="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="minSamples">Min Samples: <span id="minSamplesValue">5</span></label>
+                        <input type="number" id="minSamples" step="1" min="2" max="100" value="5">
+                    </div>
+                    <button class="btn" id="clusterBtn">重新聚类</button>
+                    <div id="clusterError" class="error"></div>
+                </div>
+
+                <div class="section" id="dataInfoSection" style="display: none;">
+                    <h3 class="section-title">📊 数据信息</h3>
+                    <div id="dataInfo"></div>
+                </div>
+            </div>
+
+            <div class="chart-area">
+                <div id="loading" class="loading" style="display: none;">
+                    <h3>⏳ 处理中，请稍候...</h3>
+                </div>
+                <div id="noData" class="loading">
+                    <h3>👋 请上传CSV文件开始分析</h3>
+                </div>
+                <div id="chartContent" style="display: none;">
+                    <div class="view-toggle" style="display: none;">
+                        <button class="active" id="view2d">2D 视图</button>
+                        <button id="view3d">3D 视图</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="clusterChart"></canvas>
+                    </div>
+                    <div class="stats" id="stats"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentView = '2d';
+        let currentResult = null;
+        let chart = null;
+
+        const colors = [
+            'rgba(102, 126, 234, 0.8)',
+            'rgba(118, 75, 162, 0.8)',
+            'rgba(237, 100, 166, 0.8)',
+            'rgba(249, 115, 22, 0.8)',
+            'rgba(17, 153, 142, 0.8)',
+            'rgba(56, 189, 248, 0.8)',
+            'rgba(168, 85, 247, 0.8)',
+            'rgba(236, 72, 153, 0.8)',
+            'rgba(34, 197, 94, 0.8)',
+            'rgba(239, 68, 68, 0.8)',
+            'rgba(245, 158, 11, 0.8)',
+            'rgba(59, 130, 246, 0.8)'
+        ];
+
+        const noiseColor = 'rgba(156, 163, 175, 0.6)';
+
+        document.getElementById('eps').addEventListener('input', (e) => {
+            document.getElementById('epsValue').textContent = e.target.value;
+        });
+
+        document.getElementById('minSamples').addEventListener('input', (e) => {
+            document.getElementById('minSamplesValue').textContent = e.target.value;
+        });
+
+        document.getElementById('algorithm').addEventListener('change', (e) => {
+            document.getElementById('epsGroup').style.display = e.target.value === 'dbscan' ? 'block' : 'none';
+        });
+
+        document.getElementById('view2d').addEventListener('click', () => {
+            currentView = '2d';
+            document.getElementById('view2d').classList.add('active');
+            document.getElementById('view3d').classList.remove('active');
+            if (currentResult) updateChart();
+        });
+
+        document.getElementById('view3d').addEventListener('click', () => {
+            currentView = '3d';
+            document.getElementById('view3d').classList.add('active');
+            document.getElementById('view2d').classList.remove('active');
+            if (currentResult) updateChart();
+        });
+
+        document.getElementById('uploadBtn').addEventListener('click', uploadFile);
+        document.getElementById('clusterBtn').addEventListener('click', runClustering);
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('csvFile');
+            const errorDiv = document.getElementById('uploadError');
+            errorDiv.style.display = 'none';
+
+            if (!fileInput.files[0]) {
+                errorDiv.textContent = '请先选择CSV文件';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            showLoading(true);
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '上传失败');
+                }
+
+                document.getElementById('paramsSection').style.display = 'block';
+                document.getElementById('dataInfoSection').style.display = 'block';
+                updateDataInfo(data.data_info);
+                
+                await runClustering();
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function runClustering() {
+            const errorDiv = document.getElementById('clusterError');
+            errorDiv.style.display = 'none';
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/cluster', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        algorithm: document.getElementById('algorithm').value,
+                        eps: parseFloat(document.getElementById('eps').value),
+                        min_samples: parseInt(document.getElementById('minSamples').value)
+                    })
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '聚类失败');
+                }
+
+                currentResult = data;
+                document.getElementById('chartContent').style.display = 'block';
+                document.getElementById('noData').style.display = 'none';
+                updateChart();
+                updateStats(data.cluster_result);
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function updateChart() {
+            if (chart) chart.destroy();
+
+            const ctx = document.getElementById('clusterChart').getContext('2d');
+            const labels = currentResult.cluster_result.labels;
+            const embedding = currentView === '2d' ? 
+                currentResult.embedding_2d.embedding : 
+                currentResult.embedding_3d.embedding;
+
+            const datasets = [];
+            const uniqueLabels = [...new Set(labels)];
+
+            uniqueLabels.forEach((label, idx) => {
+                const indices = labels.map((l, i) => l === label ? i : -1).filter(i => i !== -1);
+                const points = indices.map(i => ({
+                    x: embedding[i][0],
+                    y: embedding[i][1]
+                }));
+                const color = label === -1 ? noiseColor : colors[idx % colors.length];
+                const labelText = label === -1 ? '噪声点' : `簇 ${label + 1}`;
+
+                datasets.push({
+                    label: labelText,
+                    data: points,
+                    backgroundColor: color,
+                    borderColor: color.replace('0.8', '1'),
+                    borderWidth: 1,
+                    pointRadius: 5,
+                    pointHoverRadius: 8
+                });
+            });
+
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: `UMAP ${currentView} 降维可视化`,
+                            font: { size: 16, weight: 'bold' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const clusterLabel = labels[idx];
+                                    const clusterName = clusterLabel === -1 ? '噪声' : `簇 ${clusterLabel + 1}`;
+                                    if (currentView === '3d') {
+                                        return `${clusterName} (${embedding[idx][0].toFixed(2)}, ${embedding[idx][1].toFixed(2)}, ${embedding[idx][2].toFixed(2)})`;
+                                    }
+                                    return `${clusterName} (${embedding[idx][0].toFixed(2)}, ${embedding[idx][1].toFixed(2)})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'UMAP 1' } },
+                        y: { title: { display: true, text: 'UMAP 2' } }
+                    }
+                }
+            });
+        }
+
+        function updateStats(clusterResult) {
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${clusterResult.n_clusters}</div>
+                    <div class="stat-label">聚类数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${clusterResult.n_noise}</div>
+                    <div class="stat-label">噪声点数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${clusterResult.algorithm}</div>
+                    <div class="stat-label">使用算法</div>
+                </div>
+            `;
+        }
+
+        function updateDataInfo(dataInfo) {
+            document.getElementById('dataInfo').innerHTML = `
+                <p><strong>文件名:</strong> ${dataInfo.filename}</p>
+                <p><strong>样本数:</strong> ${dataInfo.n_samples}</p>
+                <p><strong>特征数:</strong> ${dataInfo.n_features}</p>
+                <p><strong>特征列:</strong> ${dataInfo.columns.slice(0, 5).join(', ')}${dataInfo.columns.length > 5 ? '...' : ''}</p>
+            `;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('uploadBtn').disabled = show;
+            document.getElementById('clusterBtn').disabled = show;
+        }
+    </script>
+</body>
+</html>

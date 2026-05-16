@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D点云可视化工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; background: #1a1a2e; }
+        .sidebar {
+            width: 320px;
+            background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
+            padding: 24px;
+            color: #e0e0e0;
+            overflow-y: auto;
+            border-right: 1px solid #0f3460;
+        }
+        .main-content {
+            flex: 1;
+            position: relative;
+            background: #0a0a12;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+        h1 {
+            font-size: 20px;
+            margin-bottom: 24px;
+            color: #00d9ff;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+        }
+        h2 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: #00d9ff;
+            border-bottom: 1px solid #0f3460;
+            padding-bottom: 8px;
+        }
+        .section { margin-bottom: 24px; }
+        .file-upload {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-label {
+            background: linear-gradient(135deg, #00d9ff 0%, #0099cc 100%);
+            color: #1a1a2e;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 217, 255, 0.4);
+        }
+        .file-info {
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label {
+            font-size: 13px;
+            color: #aaa;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #0f3460;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #00d9ff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+        }
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .radio-item:hover { background: #0f3460; }
+        .radio-item input { accent-color: #00d9ff; }
+        .stats {
+            background: #0f3460;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        .stats-value {
+            color: #00d9ff;
+            font-weight: 600;
+        }
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 40px;
+            border-radius: 10px;
+            color: #00d9ff;
+            font-size: 16px;
+            z-index: 100;
+        }
+        .loading.active { display: block; }
+        .error {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #e74c3c;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            z-index: 200;
+            max-width: 400px;
+        }
+        .error.active { display: block; animation: slideIn 0.3s; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .instructions {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.6;
+            padding: 12px;
+            background: rgba(15, 52, 96, 0.5);
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1>🗼 3D点云可视化</h1>
+        
+        <div class="section">
+            <h2>📁 上传点云</h2>
+            <div class="file-upload">
+                <label class="file-label" for="fileInput">选择 PLY / XYZ 文件</label>
+                <input type="file" id="fileInput" class="file-input" accept=".ply,.xyz">
+                <div class="file-info" id="fileInfo">支持 PLY 和 XYZ 格式</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 点云信息</h2>
+            <div class="stats" id="statsBox">
+                <div class="stats-item"><span>点数：</span><span class="stats-value" id="pointCount">--</span></div>
+                <div class="stats-item"><span>X 范围：</span><span class="stats-value" id="xRange">--</span></div>
+                <div class="stats-item"><span>Y 范围：</span><span class="stats-value" id="yRange">--</span></div>
+                <div class="stats-item"><span>Z 范围：</span><span class="stats-value" id="zRange">--</span></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ 点大小</h2>
+            <div class="control-group">
+                <label for="pointSize">当前大小：<span id="pointSizeValue">0.02</span></label>
+                <input type="range" id="pointSize" min="0.001" max="0.1" step="0.001" value="0.02">
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎨 颜色模式</h2>
+            <div class="radio-group">
+                <label class="radio-item">
+                    <input type="radio" name="colorMode" value="height" checked>
+                    <span>按高度着色</span>
+                </label>
+                <label class="radio-item">
+                    <input type="radio" name="colorMode" value="random">
+                    <span>随机颜色</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>💡 操作提示</h2>
+            <div class="instructions">
+                鼠标左键：旋转视角<br>
+                鼠标右键：平移视角<br>
+                滚轮：缩放
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div id="canvas-container"></div>
+        <div class="loading" id="loading">处理中... 正在加载点云数据</div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let pointCloud = null;
+        let pointCloudData = null;
+        let currentColorMode = 'height';
+        let pointSize = 0.02;
+        let animationId = null;
+
+        function initThreeJS() {
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a12);
+
+            camera = new THREE.PerspectiveCamera(75, width / height, 0.001, 1000);
+            camera.position.set(2, 2, 2);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            if (typeof THREE.OrbitControls === 'undefined') {
+                console.error('OrbitControls 未加载');
+                showError('3D控制器加载失败，请刷新页面重试');
+                return;
+            }
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 0.5;
+            controls.zoomSpeed = 1.0;
+            controls.panSpeed = 0.5;
+
+            const axesHelper = new THREE.AxesHelper(0.5);
+            scene.add(axesHelper);
+
+            const gridHelper = new THREE.GridHelper(2, 20, 0x0f3460, 0x1a1a2e);
+            scene.add(gridHelper);
+
+            animate();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            if (controls) {
+                controls.update();
+            }
+            renderer.render(scene, camera);
+        }
+
+        function updatePointCloud() {
+            if (!pointCloudData) return;
+
+            if (pointCloud) {
+                scene.remove(pointCloud);
+                pointCloud.geometry.dispose();
+                pointCloud.material.dispose();
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(pointCloudData.points.flat());
+            const colors = new Float32Array(
+                (currentColorMode === 'height' ? pointCloudData.colors_height : pointCloudData.colors_random)
+                    .flat()
+                    .map(v => v / 255)
+            );
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.center();
+
+            const material = new THREE.PointsMaterial({
+                size: pointSize,
+                vertexColors: true,
+                sizeAttenuation: true,
+                transparent: true,
+                opacity: 0.9
+            });
+
+            pointCloud = new THREE.Points(geometry, material);
+            scene.add(pointCloud);
+
+            const box = new THREE.Box3().setFromObject(pointCloud);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            
+            camera.position.set(center.x + maxDim * 1.5, center.y + maxDim * 1.5, center.z + maxDim * 1.5);
+            
+            if (controls) {
+                controls.target.copy(center);
+                controls.update();
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('active');
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('active');
+            setTimeout(() => {
+                errorDiv.classList.remove('active');
+            }, 5000);
+        }
+
+        function formatRange(min, max) {
+            return `${min.toFixed(2)} ~ ${max.toFixed(2)}`;
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            initThreeJS();
+
+            document.getElementById('fileInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                document.getElementById('fileInfo').textContent = `已选择：${file.name}`;
+                showLoading();
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        pointCloudData = data.data;
+                        document.getElementById('pointCount').textContent = pointCloudData.count.toLocaleString();
+                        document.getElementById('xRange').textContent = formatRange(pointCloudData.original_min[0], pointCloudData.original_max[0]);
+                        document.getElementById('yRange').textContent = formatRange(pointCloudData.original_min[1], pointCloudData.original_max[1]);
+                        document.getElementById('zRange').textContent = formatRange(pointCloudData.original_min[2], pointCloudData.original_max[2]);
+                        updatePointCloud();
+                    } else {
+                        showError(data.error || '上传失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError('上传失败：' + error.message);
+                })
+                .finally(() => {
+                    hideLoading();
+                });
+            });
+
+            document.getElementById('pointSize').addEventListener('input', function(e) {
+                pointSize = parseFloat(e.target.value);
+                document.getElementById('pointSizeValue').textContent = pointSize.toFixed(3);
+                if (pointCloud) {
+                    pointCloud.material.size = pointSize;
+                }
+            });
+
+            document.querySelectorAll('input[name="colorMode"]').forEach(radio => {
+                radio.addEventListener('change', function(e) {
+                    currentColorMode = e.target.value;
+                    if (pointCloudData) {
+                        updatePointCloud();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

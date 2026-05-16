@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}上传成功 - 临时文件分享{% endblock %}
+{% block content %}
+<div class="card">
+    <div style="text-align: center;">
+        <div style="font-size: 4rem; margin-bottom: 20px;">✅</div>
+        <h2 style="color: #333; margin-bottom: 10px;">上传成功！</h2>
+        <p style="color: #666; margin-bottom: 25px;">文件 <strong>{{ original_name }}</strong> 已上传</p>
+    </div>
+    
+    <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; color: #666; font-weight: 500;">下载链接</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" value="{{ download_url }}" readonly 
+                       style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; background: white;"
+                       id="downloadUrl">
+                <button onclick="copyUrl()" class="btn btn-primary" style="white-space: nowrap;">复制</button>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; color: #666; font-weight: 500;">提取码</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div style="flex: 1; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; font-size: 2rem; text-align: center; font-weight: bold; letter-spacing: 5px;">
+                    {{ code }}
+                </div>
+                <button onclick="copyCode()" class="btn btn-primary" style="white-space: nowrap;">复制</button>
+            </div>
+        </div>
+        
+        <div style="color: #888; font-size: 0.9rem;">
+            <p>🗓️ 有效期：{{ expire_option.replace('1h', '1小时').replace('24h', '24小时').replace('7d', '7天') }}</p>
+            <p>🔗 分享此链接给他人，他们需要输入提取码才能下载</p>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px;">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary" style="flex: 1; text-align: center;">继续上传</a>
+        <a href="{{ url_for('download_page', token=token) }}" class="btn btn-primary" style="flex: 1; text-align: center;">查看下载页</a>
+    </div>
+</div>
+
+<script>
+function copyUrl() {
+    const input = document.getElementById('downloadUrl');
+    input.select();
+    document.execCommand('copy');
+    alert('链接已复制到剪贴板！');
+}
+function copyCode() {
+    navigator.clipboard.writeText('{{ code }}');
+    alert('提取码已复制到剪贴板！');
+}
+</script>
+{% endblock %}

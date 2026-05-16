@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}上传文件 - 临时文件分享{% endblock %}
+{% block content %}
+<div class="card">
+    <h2 style="margin-bottom: 20px; color: #333;">📤 上传文件</h2>
+    <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+        <div class="input-group">
+            <label for="file">选择文件</label>
+            <input type="file" id="file" name="file" required>
+            <small style="color: #888; margin-top: 5px; display: block;">支持任意类型文件，单个文件不超过10MB</small>
+        </div>
+        <div class="input-group">
+            <label for="expire">过期时间</label>
+            <select id="expire" name="expire">
+                <option value="1h">1小时</option>
+                <option value="24h" selected>24小时</option>
+                <option value="7d">7天</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">上传文件</button>
+    </form>
+</div>
+{% endblock %}

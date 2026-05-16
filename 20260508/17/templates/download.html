@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}下载文件 - 临时文件分享{% endblock %}
+{% block content %}
+<div class="card">
+    <div style="text-align: center; margin-bottom: 25px;">
+        <div style="font-size: 4rem; margin-bottom: 15px;">📥</div>
+        <h2 style="color: #333; margin-bottom: 10px;">文件下载</h2>
+    </div>
+    
+    <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            <span style="color: #666;">文件名</span>
+            <span style="font-weight: 500;">{{ original_name }}</span>
+        </div>
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            <span style="color: #666;">文件大小</span>
+            <span>{{ size|format_size }}</span>
+        </div>
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            <span style="color: #666;">上传时间</span>
+            <span>{{ upload_time|format_datetime }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <span style="color: #666;">过期时间</span>
+            <span style="color: #e74c3c; font-weight: 500;">{{ expire_time|format_datetime }}</span>
+        </div>
+    </div>
+    
+    <form method="post">
+        <div class="input-group">
+            <label for="code">请输入提取码</label>
+            <input type="text" id="code" name="code" maxlength="6" placeholder="输入6位提取码" required 
+                   style="text-transform: uppercase; text-align: center; font-size: 1.5rem; letter-spacing: 10px;">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">下载文件</button>
+    </form>
+    
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="{{ url_for('index') }}" style="color: #667eea; text-decoration: none;">← 返回首页</a>
+    </div>
+</div>
+{% endblock %}

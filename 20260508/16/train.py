@@ -5,54 +5,87 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import os
 
-class SimpleCNN(nn.Module):
+class EnhancedCNN(nn.Module):
     def __init__(self):
-        super(SimpleCNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(64 * 7 * 7, 128)
-        self.fc2 = nn.Linear(128, 10)
-        self.dropout = nn.Dropout(0.25)
+        super(EnhancedCNN, self).__init__()
+        self.conv_layers = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Dropout(0.2),
+            
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Dropout(0.2),
+            
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Dropout(0.2)
+        )
+        
+        self.fc_layers = nn.Sequential(
+            nn.Linear(128 * 3 * 3, 256),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(128, 10)
+        )
 
     def forward(self, x):
-        x = self.pool(torch.relu(self.conv1(x)))
-        x = self.pool(torch.relu(self.conv2(x)))
-        x = x.view(-1, 64 * 7 * 7)
-        x = torch.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = self.fc2(x)
+        x = self.conv_layers(x)
+        x = x.view(-1, 128 * 3 * 3)
+        x = self.fc_layers(x)
         return x
 
 def train():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    transform = transforms.Compose([
+    train_transform = transforms.Compose([
+        transforms.RandomRotation(10),
+        transforms.RandomAffine(0, translate=(0.1, 0.1)),
+        transforms.RandomPerspective(distortion_scale=0.1, p=0.2),
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+
+    test_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
 
     print("Loading MNIST dataset...")
     train_dataset = datasets.MNIST(
-        root='./data', train=True, download=True, transform=transform
+        root='./data', train=True, download=True, transform=train_transform
     )
     test_dataset = datasets.MNIST(
-        root='./data', train=False, download=True, transform=transform
+        root='./data', train=False, download=True, transform=test_transform
     )
 
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=1000, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=4)
+    test_loader = DataLoader(test_dataset, batch_size=1000, shuffle=False, num_workers=4)
 
-    model = SimpleCNN().to(device)
+    model = EnhancedCNN().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
 
     print("Starting training...")
-    num_epochs = 5
+    num_epochs = 15
+    best_accuracy = 0.0
+
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
+        
         for batch_idx, (data, target) in enumerate(train_loader):
             data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
@@ -62,9 +95,12 @@ def train():
             optimizer.step()
             running_loss += loss.item()
 
-            if batch_idx % 100 == 99:
-                print(f'Epoch {epoch + 1}, Batch {batch_idx + 1}, Loss: {running_loss / 100:.4f}')
+            if batch_idx % 200 == 199:
+                avg_loss = running_loss / 200
+                print(f'Epoch {epoch + 1}/{num_epochs}, Batch {batch_idx + 1}, Loss: {avg_loss:.4f}')
                 running_loss = 0.0
+
+        scheduler.step()
 
         model.eval()
         test_loss = 0
@@ -81,9 +117,13 @@ def train():
         accuracy = 100.0 * correct / len(test_loader.dataset)
         print(f'\nTest set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{len(test_loader.dataset)} ({accuracy:.2f}%)\n')
 
-    os.makedirs('models', exist_ok=True)
-    torch.save(model.state_dict(), 'models/mnist_cnn.pth')
-    print("Model saved as models/mnist_cnn.pth")
+        if accuracy > best_accuracy:
+            best_accuracy = accuracy
+            os.makedirs('models', exist_ok=True)
+            torch.save(model.state_dict(), 'models/mnist_cnn.pth')
+            print(f"New best model saved with accuracy: {best_accuracy:.2f}%\n")
+
+    print(f"Training complete! Best accuracy: {best_accuracy:.2f}%")
 
 if __name__ == '__main__':
     train()

@@ -9,27 +9,48 @@ import numpy as np
 
 app = Flask(__name__)
 
-class SimpleCNN(nn.Module):
+class EnhancedCNN(nn.Module):
     def __init__(self):
-        super(SimpleCNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(64 * 7 * 7, 128)
-        self.fc2 = nn.Linear(128, 10)
-        self.dropout = nn.Dropout(0.25)
+        super(EnhancedCNN, self).__init__()
+        self.conv_layers = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Dropout(0.2),
+            
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Dropout(0.2),
+            
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Dropout(0.2)
+        )
+        
+        self.fc_layers = nn.Sequential(
+            nn.Linear(128 * 3 * 3, 256),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(128, 10)
+        )
 
     def forward(self, x):
-        x = self.pool(torch.relu(self.conv1(x)))
-        x = self.pool(torch.relu(self.conv2(x)))
-        x = x.view(-1, 64 * 7 * 7)
-        x = torch.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = self.fc2(x)
+        x = self.conv_layers(x)
+        x = x.view(-1, 128 * 3 * 3)
+        x = self.fc_layers(x)
         return x
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = SimpleCNN().to(device)
+model = EnhancedCNN().to(device)
 model.load_state_dict(torch.load('models/mnist_cnn.pth', map_location=device, weights_only=True))
 model.eval()
 
@@ -59,6 +80,13 @@ def predict():
         image_array = np.array(image)
         if np.mean(image_array) > 128:
             image = Image.fromarray(255 - image_array)
+        
+        image_array = np.array(image)
+        non_zero_pixels = image_array[image_array > 0]
+        if len(non_zero_pixels) > 0:
+            image_array = (image_array - np.min(non_zero_pixels)) / (np.max(non_zero_pixels) - np.min(non_zero_pixels) + 1e-6)
+            image_array = (image_array * 255).astype(np.uint8)
+            image = Image.fromarray(image_array)
         
         tensor = transform(image).unsqueeze(0).to(device)
         

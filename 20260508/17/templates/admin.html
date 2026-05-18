@@ -44,7 +44,12 @@
                             <td style="padding: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ file.original_name }}">
                                 {{ file.original_name }}
                             </td>
-                            <td style="padding: 12px; font-family: monospace; font-weight: bold;">{{ file.code }}</td>
+                            <td style="padding: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-family: monospace; font-weight: bold; background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">{{ file.code }}</span>
+                                    <button onclick="copyCode('{{ file.code }}')" style="background: none; border: none; color: #667eea; cursor: pointer; font-size: 0.85rem; padding: 2px 6px; border-radius: 4px;" title="复制提取码">📋</button>
+                                </div>
+                            </td>
                             <td style="padding: 12px;">{{ file.size|format_size }}</td>
                             <td style="padding: 12px;">
                                 {{ file.expire_option.replace('1h', '1小时').replace('24h', '24小时').replace('7d', '7天') }}
@@ -79,4 +84,11 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+function copyCode(code) {
+    navigator.clipboard.writeText(code);
+    alert('提取码 ' + code + ' 已复制到剪贴板！');
+}
+</script>
 {% endblock %}

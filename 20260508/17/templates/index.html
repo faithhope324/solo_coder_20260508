@@ -3,6 +3,9 @@
 {% block content %}
 <div class="card">
     <h2 style="margin-bottom: 20px; color: #333;">📤 上传文件</h2>
+    <div style="background: #e7f3ff; border: 1px solid #b6d4fe; color: #084298; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem;">
+        💡 <strong>温馨提示：</strong>上传成功后请及时保存下载链接和提取码！您也可以随时在<a href="{{ url_for('admin') }}" style="color: #084298; font-weight: 500;">管理页面</a>查看所有上传文件的提取码。
+    </div>
     <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
         <div class="input-group">
             <label for="file">选择文件</label>

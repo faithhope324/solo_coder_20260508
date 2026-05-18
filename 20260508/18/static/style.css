@@ -1,0 +1,30 @@
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+.post-content {
+    line-height: 1.8;
+    font-size: 1.1rem;
+}
+
+.card {
+    border-radius: 8px;
+}
+
+.badge {
+    font-size: 0.85em;
+}
+
+.pagination {
+    margin-top: 2rem;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}

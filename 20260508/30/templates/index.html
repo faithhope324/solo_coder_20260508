@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遗传算法演示 - 函数最大值求解</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .header .function {
+            font-size: 1.2rem;
+            color: #a0aec0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 25px;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: fit-content;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            color: #00d4ff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cbd5e0;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .form-group .value-display {
+            float: right;
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .form-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .form-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            transition: transform 0.2s;
+        }
+
+        .form-group input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .form-group select:hover {
+            border-color: rgba(0, 212, 255, 0.5);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2);
+        }
+
+        .form-group select option {
+            background: #1a1a2e;
+            color: #e0e0e0;
+        }
+
+        .run-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .run-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+
+        .run-btn:active {
+            transform: translateY(0);
+        }
+
+        .run-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .run-btn .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        .run-btn.loading .spinner {
+            display: block;
+        }
+
+        .run-btn.loading .btn-text {
+            opacity: 0.8;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+
+        .result-card .label {
+            font-size: 0.85rem;
+            color: #a0aec0;
+            margin-bottom: 5px;
+        }
+
+        .result-card .value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #00d4ff;
+            font-family: 'Courier New', monospace;
+        }
+
+        .charts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.15rem;
+            color: #fff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #00d4ff, #7c3aed);
+            border-radius: 2px;
+        }
+
+        .chart {
+            width: 100%;
+            height: 400px;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #6b7280;
+            font-size: 1rem;
+        }
+
+        .placeholder .icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .chart {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧬 遗传算法演示</h1>
+            <div class="function">f(x) = x · sin(10πx) + 1, &nbsp;&nbsp; x ∈ [0, 2]</div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="section-title">⚙️ 参数设置</div>
+                
+                <div class="form-group">
+                    <label>
+                        种群大小
+                        <span class="value-display" id="pop-size-value">50</span>
+                    </label>
+                    <input type="range" id="pop-size" min="10" max="500" value="50" step="10">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        变异率
+                        <span class="value-display" id="mutation-rate-value">0.01</span>
+                    </label>
+                    <input type="range" id="mutation-rate" min="0.001" max="1" value="0.01" step="0.001">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        迭代代数
+                        <span class="value-display" id="generations-value">100</span>
+                    </label>
+                    <input type="range" id="generations" min="10" max="500" value="100" step="10">
+                </div>
+
+                <div class="form-group">
+                    <label>选择策略</label>
+                    <select id="selection-strategy">
+                        <option value="roulette">轮盘赌选择</option>
+                        <option value="tournament">锦标赛选择</option>
+                        <option value="elitism">精英保留选择</option>
+                    </select>
+                </div>
+
+                <button class="run-btn" id="run-btn">
+                    <span class="spinner"></span>
+                    <span class="btn-text">运行遗传算法</span>
+                </button>
+
+                <div class="error-message" id="error-message"></div>
+
+                <div class="results-section" id="results-section" style="display: none;">
+                    <div class="section-title">📊 运行结果</div>
+                    <div class="result-card">
+                        <div class="label">最优解 x</div>
+                        <div class="value" id="best-x">-</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="label">最大值 f(x)</div>
+                        <div class="value" id="best-fitness">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-card">
+                    <div class="chart-title">适应度进化曲线</div>
+                    <div class="chart" id="fitness-chart">
+                        <div class="placeholder">
+                            <div class="icon">📈</div>
+                            <div>运行算法后显示每代最优个体和平均适应度的变化曲线</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">最终种群分布</div>
+                    <div class="chart" id="population-chart">
+                        <div class="placeholder">
+                            <div class="icon">🎯</div>
+                            <div>运行算法后显示最终种群在函数曲线上的分布散点图</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const popSizeSlider = document.getElementById('pop-size');
+        const mutationRateSlider = document.getElementById('mutation-rate');
+        const generationsSlider = document.getElementById('generations');
+        const selectionStrategySelect = document.getElementById('selection-strategy');
+        const runBtn = document.getElementById('run-btn');
+        const errorMessage = document.getElementById('error-message');
+        const resultsSection = document.getElementById('results-section');
+
+        popSizeSlider.addEventListener('input', function() {
+            document.getElementById('pop-size-value').textContent = this.value;
+        });
+
+        mutationRateSlider.addEventListener('input', function() {
+            document.getElementById('mutation-rate-value').textContent = parseFloat(this.value).toFixed(3);
+        });
+
+        generationsSlider.addEventListener('input', function() {
+            document.getElementById('generations-value').textContent = this.value;
+        });
+
+        runBtn.addEventListener('click', function() {
+            const params = {
+                pop_size: parseInt(popSizeSlider.value),
+                mutation_rate: parseFloat(mutationRateSlider.value),
+                generations: parseInt(generationsSlider.value),
+                selection_strategy: selectionStrategySelect.value
+            };
+
+            runBtn.classList.add('loading');
+            runBtn.disabled = true;
+            errorMessage.classList.remove('show');
+
+            fetch('/run_ga', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(params)
+            })
+            .then(response => response.json())
+            .then(data => {
+                runBtn.classList.remove('loading');
+                runBtn.disabled = false;
+
+                if (data.success) {
+                    resultsSection.style.display = 'block';
+                    document.getElementById('best-x').textContent = data.best_x;
+                    document.getElementById('best-fitness').textContent = data.best_fitness;
+                    
+                    plotFitnessChart(data);
+                    plotPopulationChart(data);
+                } else {
+                    showError(data.error || '运行失败');
+                }
+            })
+            .catch(error => {
+                runBtn.classList.remove('loading');
+                runBtn.disabled = false;
+                showError('网络错误，请稍后重试');
+                console.error('Error:', error);
+            });
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function plotFitnessChart(data) {
+            const traceBest = {
+                x: data.generations,
+                y: data.best_fitness_history,
+                mode: 'lines',
+                name: '最优适应度',
+                line: {
+                    color: '#00d4ff',
+                    width: 3
+                }
+            };
+
+            const traceAvg = {
+                x: data.generations,
+                y: data.avg_fitness_history,
+                mode: 'lines',
+                name: '平均适应度',
+                line: {
+                    color: '#f472b6',
+                    width: 2,
+                    dash: 'dash'
+                }
+            };
+
+            const layout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                xaxis: {
+                    title: '代数',
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    zerolinecolor: 'rgba(255,255,255,0.2)',
+                    titlefont: { color: '#a0aec0' },
+                    tickfont: { color: '#a0aec0' }
+                },
+                yaxis: {
+                    title: '适应度 f(x)',
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    zerolinecolor: 'rgba(255,255,255,0.2)',
+                    titlefont: { color: '#a0aec0' },
+                    tickfont: { color: '#a0aec0' }
+                },
+                legend: {
+                    font: { color: '#e0e0e0' },
+                    bgcolor: 'rgba(0,0,0,0.3)'
+                },
+                margin: { l: 60, r: 30, t: 20, b: 50 },
+                hovermode: 'x unified'
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false
+            };
+
+            Plotly.newPlot('fitness-chart', [traceBest, traceAvg], layout, config);
+        }
+
+        function plotPopulationChart(data) {
+            const traceFunction = {
+                x: data.function_x,
+                y: data.function_y,
+                mode: 'lines',
+                name: 'f(x) 曲线',
+                line: {
+                    color: '#7c3aed',
+                    width: 2
+                }
+            };
+
+            const tracePopulation = {
+                x: data.final_population,
+                y: data.final_fitness,
+                mode: 'markers',
+                name: '最终种群',
+                marker: {
+                    color: '#00d4ff',
+                    size: 10,
+                    opacity: 0.7,
+                    line: {
+                        color: '#ffffff',
+                        width: 1
+                    }
+                }
+            };
+
+            const traceBest = {
+                x: [data.best_x],
+                y: [data.best_fitness],
+                mode: 'markers',
+                name: '最优解',
+                marker: {
+                    color: '#f472b6',
+                    size: 15,
+                    symbol: 'star',
+                    line: {
+                        color: '#ffffff',
+                        width: 2
+                    }
+                }
+            };
+
+            const layout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                xaxis: {
+                    title: 'x',
+                    range: [0, 2],
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    zerolinecolor: 'rgba(255,255,255,0.2)',
+                    titlefont: { color: '#a0aec0' },
+                    tickfont: { color: '#a0aec0' }
+                },
+                yaxis: {
+                    title: 'f(x)',
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    zerolinecolor: 'rgba(255,255,255,0.2)',
+                    titlefont: { color: '#a0aec0' },
+                    tickfont: { color: '#a0aec0' }
+                },
+                legend: {
+                    font: { color: '#e0e0e0' },
+                    bgcolor: 'rgba(0,0,0,0.3)'
+                },
+                margin: { l: 60, r: 30, t: 20, b: 50 },
+                hovermode: 'closest'
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false
+            };
+
+            Plotly.newPlot('population-chart', [traceFunction, tracePopulation, traceBest], layout, config);
+        }
+    </script>
+</body>
+</html>

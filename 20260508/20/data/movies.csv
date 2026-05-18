@@ -1,0 +1,218 @@
+movieId,title,genres
+1,Toy Story (1995),Adventure|Animation|Children|Comedy|Fantasy
+2,Jumanji (1995),Adventure|Children|Fantasy
+3,Grumpier Old Men (1995),Comedy|Romance
+4,Waiting to Exhale (1995),Comedy|Drama|Romance
+5,Father of the Bride Part II (1995),Comedy
+6,Heat (1995),Action|Crime|Thriller
+7,Sabrina (1995),Comedy|Romance
+8,Tom and Huck (1995),Adventure|Children
+9,Sudden Death (1995),Action
+10,GoldenEye (1995),Action|Adventure|Thriller
+12,Dracula Dead and Loving It (1995),Comedy|Horror
+13,Balto (1995),Adventure|Animation|Children
+14,Nixon (1995),Drama
+15,Cutthroat Island (1995),Action|Adventure|Romance
+16,Casino (1995),Crime|Drama
+17,Sense and Sensibility (1995),Drama|Romance
+18,Four Rooms (1995),Comedy
+19,Ace Ventura When Nature Calls (1995),Comedy
+20,Money Train (1995),Action|Comedy|Crime
+21,Get Shorty (1995),Comedy|Crime|Thriller
+22,Assassins (1995),Action|Crime|Thriller
+23,Powder (1995),Drama|Sci-Fi
+24,Leaving Las Vegas (1995),Drama|Romance
+25,Othello (1995),Drama
+26,Now and Then (1995),Children|Drama
+27,Persuasion (1995),Drama|Romance
+29,Shanghai Triad (1995),Crime|Drama
+30,Twelve Monkeys (1995),Mystery|Sci-Fi|Thriller
+31,Dangerous Minds (1995),Drama
+32,12 Monkeys (1995),Mystery|Sci-Fi|Thriller
+34,Babe (1995),Children|Drama
+36,Dead Man Walking (1995),Crime|Drama
+38,It Takes Two (1995),Children|Comedy
+39,Clueless (1995),Comedy|Romance
+40,Billy Madison (1995),Comedy
+42,Barb Wire (1996),Action|Sci-Fi
+43,Mighty Aphrodite (1995),Comedy|Drama|Romance
+44,Pocahontas (1995),Animation|Children|Drama|Musical|Romance
+45,When Night Is Falling (1995),Drama|Romance
+46,Usual Suspects (1995),Crime|Mystery|Thriller
+47,Seven Se7en (1995),Mystery|Thriller
+52,Mighty Morphin Power Rangers (1995),Action|Children|Sci-Fi
+53,Lamerica (1994),Drama
+58,Postman (1994),Comedy|Drama|Romance
+60,Indian in the Cupboard (1995),Adventure|Children|Fantasy
+61,Camp Nowhere (1994),Adventure|Children|Comedy
+62,Mr Holland Opus (1995),Drama
+64,Two if by Sea (1996),Comedy|Romance
+65,Screamers (1995),Action|Sci-Fi|Thriller
+66,Lawnmower Man 2 (1996),Action|Sci-Fi|Thriller
+68,Free Willy 2 (1995),Adventure|Children|Drama
+70,From Dusk Till Dawn (1996),Action|Comedy|Horror|Thriller
+71,Stuart Saves His Family (1995),Comedy
+72,Hoodlum (1997),Crime|Drama
+73,Mississippi Masala (1991),Drama|Romance
+74,Paris France (1993),Drama
+75,Broken Arrow (1996),Action|Adventure|Thriller
+76,Bad Boys (1995),Action|Comedy|Crime|Drama|Thriller
+86,White Squall (1996),Action|Adventure|Drama
+87,Run of the Country (1995),Drama|Romance
+88,Blown Away (1994),Action|Thriller
+92,Terminator 2 Judgment Day (1991),Action|Sci-Fi
+95,Braveheart (1995),Action|Drama|War
+97,Aristocats (1970),Animation|Children|Comedy|Musical
+101,Bottle Rocket (1996),Adventure|Comedy|Crime
+104,Happy Gilmore (1996),Comedy
+106,Panther (1995),Drama
+107,My Crazy Life (1993),Drama
+110,Braveheart (1995),Action|Drama|War
+111,Heavyweights (1995),Children|Comedy
+112,Rumble in the Bronx (1995),Action|Comedy|Crime|Thriller
+121,Independence Day (1996),Action|Adventure|Sci-Fi|Thriller
+122,Legends of the Fall (1994),Drama|Romance|War|Western
+123,Star Wars Episode IV (1977),Action|Adventure|Sci-Fi
+125,Flintstones (1994),Children|Comedy|Family
+126,NeverEnding Story III (1994),Adventure|Children|Fantasy
+127,George of the Jungle (1997),Action|Adventure|Children|Comedy
+128,Jurassic Park (1993),Action|Adventure|Sci-Fi|Thriller
+129,RoboCop 3 (1993),Action|Crime|Sci-Fi|Thriller
+130,Angels in the Outfield (1994),Children|Comedy|Fantasy
+135,2001 Space Odyssey (1968),Adventure|Drama|Sci-Fi
+145,Johnny Mnemonic (1995),Action|Sci-Fi|Thriller
+150,Apollo 13 (1995),Adventure|Drama|IMAX
+153,Batman Forever (1995),Action|Adventure|Comedy|Crime
+155,Die Hard With a Vengeance (1995),Action|Crime|Thriller
+157,Net (1995),Action|Crime|Thriller
+160,Congo (1995),Action|Adventure|Mystery|Sci-Fi
+161,Interview with the Vampire (1994),Drama|Fantasy|Horror
+162,Crumb (1994),Documentary
+163,Conan the Barbarian (1982),Action|Adventure|Fantasy
+165,Desperado (1995),Action|Romance|Thriller
+168,Free Willy (1993),Adventure|Children|Drama
+170,Hackers (1995),Action|Drama|Thriller
+171,Under Siege 2 (1995),Action|Thriller
+173,Johnny Suede (1991),Comedy|Drama
+174,Army of Darkness (1992),Action|Adventure|Comedy|Horror
+175,Tommy Boy (1995),Comedy
+176,Alive (1993),Adventure|Drama|Thriller
+181,Mighty Ducks (1992),Children|Comedy|Drama
+185,True Lies (1994),Action|Adventure|Comedy|Thriller
+186,Blues Brothers (1980),Action|Comedy|Crime|Musical
+191,Amadeus (1984),Drama
+204,Back to the Future (1985),Adventure|Comedy|Sci-Fi
+208,Waterworld (1995),Action|Adventure|Sci-Fi
+210,Some Like It Hot (1959),Comedy|Crime
+213,Before Sunrise (1995),Drama|Romance
+214,Clerks (1994),Comedy
+215,Delicatessen (1991),Comedy|Drama|Fantasy|Romance|Sci-Fi
+216,While You Were Sleeping (1995),Comedy|Drama|Romance
+222,Pulp Fiction (1994),Comedy|Crime|Drama|Thriller
+223,Clueless (1995),Comedy|Romance
+225,Showgirls (1995),Drama
+227,Kids (1995),Drama
+231,Before Sunrise (1995),Drama|Romance
+232,Terms of Endearment (1983),Comedy|Drama|Romance
+235,Ed Wood (1994),Comedy|Drama
+236,Unstrung Heroes (1995),Drama
+239,Go Fish (1994),Drama|Romance
+240,Gilda (1946),Drama|Romance
+244,Manhattan (1979),Comedy|Drama|Romance
+246,Hoop Dreams (1994),Documentary
+247,Heavenly Creatures (1994),Crime|Drama|Fantasy
+248,Immortal Beloved (1994),Drama|Romance
+249,Star Trek Generations (1994),Action|Adventure|Drama|Sci-Fi
+256,When Harry Met Sally (1989),Comedy|Drama|Romance
+260,Star Wars Episode IV (1977),Action|Adventure|Sci-Fi
+261,Little Women (1994),Drama|Romance
+262,Man of the House (1995),Comedy|Drama
+265,Like Water for Chocolate (1992),Drama|Fantasy|Romance
+266,Little Buddha (1993),Adventure|Drama|Fantasy
+270,Body Snatchers (1993),Drama|Horror|Sci-Fi|Thriller
+271,Alien 3 (1992),Action|Horror|Sci-Fi|Thriller
+272,Alien Resurrection (1997),Action|Horror|Sci-Fi|Thriller
+273,Heathers (1989),Comedy
+274,Scream (1996),Comedy|Horror|Thriller
+275,Primal Fear (1996),Crime|Drama|Mystery|Thriller
+288,Natural Born Killers (1994),Action|Crime|Drama|Thriller
+290,Once Were Warriors (1994),Crime|Drama
+292,Outbreak (1995),Action|Drama|Sci-Fi|Thriller
+296,Pulp Fiction (1994),Comedy|Crime|Drama|Thriller
+298,Crucible (1996),Drama
+300,Quiz Show (1994),Drama
+303,Four Weddings and a Funeral (1994),Comedy|Romance
+304,River Wild (1994),Action|Thriller
+305,Murder in the First (1995),Drama
+306,Tank Girl (1995),Action|Comedy|Sci-Fi
+307,Female Perversions (1996),Drama
+308,3 Ninjas Knuckle Up (1995),Action|Children|Comedy
+310,French Kiss (1995),Comedy|Romance
+311,Stargate (1994),Action|Adventure|Sci-Fi
+312,What is Eating Gilbert Grape (1993),Drama
+314,Forrest Gump (1994),Comedy|Drama|Romance|War
+315,Specialist (1994),Action|Thriller
+316,Stargate (1994),Action|Adventure|Sci-Fi
+318,Shawshank Redemption (1994),Crime|Drama
+319,Jefferson in Paris (1995),Drama|Romance
+321,Bullets Over Broadway (1994),Comedy|Crime|Drama
+322,Species (1995),Action|Horror|Sci-Fi|Thriller
+324,Outbreak (1995),Action|Drama|Sci-Fi|Thriller
+327,Barcelona (1994),Comedy|Drama|Romance
+329,Drop Zone (1994),Action|Thriller
+330,Little Big League (1994),Children|Comedy|Drama
+331,Major Payne (1995),Comedy
+332,What is Love Got to Do With It (1993),Drama
+333,Tom and Viv (1994),Drama|Romance
+334,What Happened Was (1994),Comedy|Drama
+337,While You Were Sleeping (1995),Comedy|Drama|Romance
+338,Vanya on 42nd Street (1994),Drama
+339,Serial Mom (1994),Comedy|Crime
+341,Coldblooded (1995),Comedy|Crime
+342,Corrina Corrina (1994),Comedy|Drama|Romance
+344,Big Hit (1998),Action|Comedy|Crime
+346,Speed (1994),Action|Thriller
+347,Menace II Society (1993),Crime|Drama
+348,Desert Winds (1995),Action|Drama
+349,Stargate (1994),Action|Adventure|Sci-Fi
+350,Benny and Joon (1993),Comedy|Drama|Romance
+351,Corruptor (1999),Action|Crime|Thriller
+352,Miami Rhapsody (1995),Comedy|Drama|Romance
+355,Free Willy 2 (1995),Adventure|Children|Drama
+356,Forrest Gump (1994),Comedy|Drama|Romance|War
+357,Houseguest (1994),Comedy
+358,Mad Love (1995),Drama|Romance
+359,Outbreak (1995),Action|Drama|Sci-Fi|Thriller
+361,Richie Rich (1994),Children|Comedy
+362,Smoke (1995),Comedy|Drama
+364,Lion King (1994),Adventure|Animation|Children|Drama|Musical|IMAX
+367,Mask (1994),Action|Comedy|Crime|Fantasy
+368,Maverick (1994),Action|Adventure|Comedy|Western
+371,Rob Roy (1995),Action|Drama|Romance|War
+372,Heavy Metal (1981),Action|Adventure|Animation|Crime|Fantasy|Sci-Fi
+373,Blown Away (1994),Action|Thriller
+374,Nell (1994),Drama
+376,Carrington (1995),Drama|Romance
+377,Speed (1994),Action|Thriller
+378,IQ (1994),Comedy|Fantasy|Romance
+379,French Kiss (1995),Comedy|Romance
+380,Deep Blue Sea (1999),Action|Horror|Sci-Fi|Thriller
+381,Safe Passage (1994),Drama
+382,Boys on the Side (1995),Comedy|Drama|Romance
+384,Little Women (1994),Drama|Romance
+385,Swimming with Sharks (1994),Comedy|Drama
+386,Addams Family Values (1993),Adventure|Children|Comedy|Fantasy
+387,Blue Chips (1994),Drama
+388,Last Action Hero (1993),Action|Adventure|Comedy|Fantasy
+389,Rich in Love (1992),Drama|Romance
+390,Fear of a Black Hat (1993),Comedy
+391,Sibling Rivalry (1990),Comedy
+392,Man Trouble (1992),Comedy|Crime|Drama|Romance
+393,Hocus Pocus (1993),Children|Comedy|Fantasy
+394,Mother of the Bride (1993),Comedy
+395,Sister Act (1992),Comedy|Crime
+396,Hard Target (1993),Action
+397,Short Cuts (1993),Drama
+398,Cliffhanger (1993),Action|Adventure|Thriller
+399,Hot Shots Part Deux (1993),Action|Comedy
+400,Sleepless in Seattle (1993),Comedy|Drama|Romance

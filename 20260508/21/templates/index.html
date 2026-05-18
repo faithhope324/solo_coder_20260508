@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维热传导方程求解器</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 20px;
+        }
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            grid-column: 1 / -1;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h2 {
+            color: #555;
+            font-size: 16px;
+            margin: 15px 0 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #667eea;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-success { background: #48bb78; color: white; }
+        .btn-success:hover { background: #38a169; }
+        .btn-warning { background: #ed8936; color: white; }
+        .btn-warning:hover { background: #dd6b20; }
+        .btn-danger { background: #e53e3e; color: white; }
+        .btn-danger:hover { background: #c53030; }
+        .btn-secondary { background: #718096; color: white; }
+        .btn-secondary:hover { background: #4a5568; }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .status {
+            background: #f7fafc;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #555;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .plot-container {
+            height: 700px;
+        }
+        #error-message {
+            background: #fff5f5;
+            color: #c53030;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: none;
+            font-size: 13px;
+        }
+        .bc-group {
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .bc-group h3 {
+            font-size: 13px;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 二维热传导方程数值求解器</h1>
+
+        <div class="panel">
+            <div id="error-message"></div>
+
+            <h2>📐 网格与物理参数</h2>
+            <div class="row">
+                <div class="form-group">
+                    <label>X方向网格数 (nx)</label>
+                    <input type="number" id="nx" value="50" min="10" max="200">
+                </div>
+                <div class="form-group">
+                    <label>Y方向网格数 (ny)</label>
+                    <input type="number" id="ny" value="50" min="10" max="200">
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label>X方向间距 (dx)</label>
+                    <input type="number" id="dx" value="1.0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Y方向间距 (dy)</label>
+                    <input type="number" id="dy" value="1.0" step="0.1">
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label>热扩散系数 (α)</label>
+                    <input type="number" id="alpha" value="0.01" step="0.001">
+                </div>
+                <div class="form-group">
+                    <label>时间步长 (dt)</label>
+                    <input type="number" id="dt" value="0.1" step="0.01">
+                </div>
+            </div>
+
+            <h2>🎯 初始条件</h2>
+            <div class="form-group">
+                <label>温度分布模式</label>
+                <select id="pattern">
+                    <option value="center_square">中心高温方块</option>
+                    <option value="center_circle">中心高温圆形</option>
+                    <option value="corner_hot">对角高温点</option>
+                    <option value="random">随机分布</option>
+                </select>
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label>高温区温度</label>
+                    <input type="number" id="center_temp" value="100.0" step="10">
+                </div>
+                <div class="form-group">
+                    <label>背景温度</label>
+                    <input type="number" id="background_temp" value="0.0" step="10">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>高温区大小比例</label>
+                <input type="number" id="square_size" value="0.2" step="0.05" min="0.1" max="0.8">
+            </div>
+
+            <h2>🧱 边界条件</h2>
+            <div class="bc-group">
+                <h3>左边界</h3>
+                <div class="row">
+                    <select id="bc_left_type" style="grid-column: 1 / -1;">
+                        <option value="fixed">固定温度</option>
+                        <option value="adiabatic">绝热 (零梯度)</option>
+                    </select>
+                </div>
+                <input type="number" id="bc_left_value" value="0.0" step="10" style="margin-top: 5px;">
+            </div>
+            <div class="bc-group">
+                <h3>右边界</h3>
+                <select id="bc_right_type" style="width: 100%;">
+                    <option value="fixed">固定温度</option>
+                    <option value="adiabatic">绝热 (零梯度)</option>
+                </select>
+                <input type="number" id="bc_right_value" value="0.0" step="10" style="margin-top: 5px;">
+            </div>
+            <div class="bc-group">
+                <h3>下边界</h3>
+                <select id="bc_bottom_type" style="width: 100%;">
+                    <option value="fixed">固定温度</option>
+                    <option value="adiabatic">绝热 (零梯度)</option>
+                </select>
+                <input type="number" id="bc_bottom_value" value="0.0" step="10" style="margin-top: 5px;">
+            </div>
+            <div class="bc-group">
+                <h3>上边界</h3>
+                <select id="bc_top_type" style="width: 100%;">
+                    <option value="fixed">固定温度</option>
+                    <option value="adiabatic">绝热 (零梯度)</option>
+                </select>
+                <input type="number" id="bc_top_value" value="0.0" step="10" style="margin-top: 5px;">
+            </div>
+
+            <h2>⚡ 模拟控制</h2>
+            <div class="row">
+                <div class="form-group">
+                    <label>每帧迭代步数</label>
+                    <input type="number" id="steps_per_frame" value="5" min="1" max="50">
+                </div>
+                <div class="form-group">
+                    <label>帧间隔 (秒)</label>
+                    <input type="number" id="frame_delay" value="0.05" step="0.01" min="0.01">
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="initializeSolver()">初始化求解器</button>
+            <button class="btn btn-success" id="startBtn" onclick="startSimulation()" disabled>▶ 开始模拟</button>
+            <button class="btn btn-warning" id="pauseBtn" onclick="pauseSimulation()" disabled>⏸ 暂停</button>
+            <div class="row">
+                <button class="btn btn-secondary" onclick="stepOnce()" disabled id="stepBtn">⏭ 单步</button>
+                <button class="btn btn-danger" onclick="resetSimulation()" disabled id="resetBtn">↺ 重置</button>
+            </div>
+
+            <div class="status">
+                <div class="status-item">
+                    <span>迭代步数:</span>
+                    <span id="frameCount">0</span>
+                </div>
+                <div class="status-item">
+                    <span>模拟时间:</span>
+                    <span id="simTime">0.0000</span>
+                </div>
+                <div class="status-item">
+                    <span>状态:</span>
+                    <span id="simStatus">未初始化</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div id="plot" class="plot-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let isInitialized = false;
+        let isRunning = false;
+        let currentData = null;
+
+        function showError(message) {
+            const errDiv = document.getElementById('error-message');
+            errDiv.textContent = '❌ ' + message;
+            errDiv.style.display = 'block';
+            setTimeout(() => { errDiv.style.display = 'none'; }, 5000);
+        }
+
+        function updateStatus(frame, time, status) {
+            document.getElementById('frameCount').textContent = frame;
+            document.getElementById('simTime').textContent = time.toFixed(4);
+            document.getElementById('simStatus').textContent = status;
+        }
+
+        function getConfig() {
+            return {
+                nx: parseInt(document.getElementById('nx').value),
+                ny: parseInt(document.getElementById('ny').value),
+                alpha: parseFloat(document.getElementById('alpha').value),
+                dx: parseFloat(document.getElementById('dx').value),
+                dy: parseFloat(document.getElementById('dy').value),
+                dt: parseFloat(document.getElementById('dt').value),
+                pattern: document.getElementById('pattern').value,
+                center_temp: parseFloat(document.getElementById('center_temp').value),
+                background_temp: parseFloat(document.getElementById('background_temp').value),
+                square_size: parseFloat(document.getElementById('square_size').value),
+                bc_left_type: document.getElementById('bc_left_type').value,
+                bc_left_value: parseFloat(document.getElementById('bc_left_value').value),
+                bc_right_type: document.getElementById('bc_right_type').value,
+                bc_right_value: parseFloat(document.getElementById('bc_right_value').value),
+                bc_top_type: document.getElementById('bc_top_type').value,
+                bc_top_value: parseFloat(document.getElementById('bc_top_value').value),
+                bc_bottom_type: document.getElementById('bc_bottom_type').value,
+                bc_bottom_value: parseFloat(document.getElementById('bc_bottom_value').value)
+            };
+        }
+
+        function initializeSolver() {
+            const config = getConfig();
+            socket.emit('initialize', config);
+            updateStatus(0, 0, '初始化中...');
+        }
+
+        function setButtonsRunning() {
+            isRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('stepBtn').disabled = true;
+            document.getElementById('resetBtn').disabled = true;
+            const frame = parseInt(document.getElementById('frameCount').textContent);
+            const time = parseFloat(document.getElementById('simTime').textContent);
+            updateStatus(frame, time, '运行中...');
+        }
+
+        function setButtonsPaused() {
+            isRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stepBtn').disabled = false;
+            document.getElementById('resetBtn').disabled = false;
+            const frame = parseInt(document.getElementById('frameCount').textContent);
+            const time = parseFloat(document.getElementById('simTime').textContent);
+            updateStatus(frame, time, '已暂停');
+        }
+
+        function startSimulation() {
+            if (!isInitialized || isRunning) return;
+            setButtonsRunning();
+            const stepsPerFrame = parseInt(document.getElementById('steps_per_frame').value);
+            const frameDelay = parseFloat(document.getElementById('frame_delay').value);
+            socket.emit('start_simulation', { steps_per_frame: stepsPerFrame, frame_delay: frameDelay });
+        }
+
+        function pauseSimulation() {
+            if (!isRunning) return;
+            setButtonsPaused();
+            socket.emit('pause_simulation');
+        }
+
+        function resetSimulation() {
+            if (!isInitialized) return;
+            isRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stepBtn').disabled = false;
+            document.getElementById('resetBtn').disabled = false;
+            updateStatus(0, 0, '重置中...');
+            socket.emit('reset_simulation');
+        }
+
+        function stepOnce() {
+            if (!isInitialized) return;
+            socket.emit('step_once', { steps: 1 });
+        }
+
+        function renderPlot(data) {
+            const nx = data[0].length;
+            const ny = data.length;
+            
+            const x = Array.from({ length: nx }, (_, i) => i);
+            const y = Array.from({ length: ny }, (_, i) => i);
+
+            const trace = {
+                z: data,
+                x: x,
+                y: y,
+                type: 'heatmap',
+                colorscale: 'Hot',
+                zauto: false,
+                zmin: Math.min(...data.flat()),
+                zmax: Math.max(...data.flat()),
+                showscale: true,
+                colorbar: {
+                    title: { text: '温度', font: { size: 14 } },
+                    thickness: 20
+                }
+            };
+
+            const layout = {
+                title: { text: '温度分布演化', font: { size: 20 } },
+                xaxis: { title: { text: 'X方向', font: { size: 14 } }, scaleanchor: 'y', scaleratio: 1 },
+                yaxis: { title: { text: 'Y方向', font: { size: 14 } } },
+                margin: { l: 60, r: 60, t: 60, b: 60 },
+                height: 700
+            };
+
+            Plotly.newPlot('plot', [trace], layout, { responsive: true });
+        }
+
+        function updatePlot(data) {
+            Plotly.update('plot', { z: [data] }, {}, [0]);
+        }
+
+        socket.on('initialized', function(msg) {
+            isInitialized = true;
+            isRunning = false;
+            currentData = msg.state;
+            renderPlot(currentData);
+            updateStatus(msg.frame, msg.time, '已初始化');
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stepBtn').disabled = false;
+            document.getElementById('resetBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+        });
+
+        socket.on('simulation_started', function(msg) {
+            updateStatus(msg.frame, msg.time, '运行中...');
+        });
+
+        socket.on('simulation_paused', function(msg) {
+            updateStatus(msg.frame, msg.time, '已暂停');
+        });
+
+        socket.on('update', function(msg) {
+            currentData = msg.state;
+            updatePlot(currentData);
+            updateStatus(msg.frame, msg.time, isRunning ? '运行中...' : '已暂停');
+        });
+
+        socket.on('reset_done', function(msg) {
+            updateStatus(msg.frame, msg.time, '已重置');
+            if (msg.state) {
+                currentData = msg.state;
+                renderPlot(currentData);
+            }
+        });
+
+        socket.on('error', function(msg) {
+            showError(msg.message);
+            updateStatus(0, 0, '错误');
+        });
+
+        socket.on('connect', function() {
+            updateStatus(0, 0, '已连接服务器');
+        });
+
+        socket.on('disconnect', function() {
+            isRunning = false;
+            isInitialized = false;
+            updateStatus(0, 0, '断开连接');
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stepBtn').disabled = true;
+            document.getElementById('resetBtn').disabled = true;
+        });
+
+
+    </script>
+</body>
+</html>

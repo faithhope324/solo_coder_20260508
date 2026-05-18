@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if current_feed %}{{ current_feed.title }} - {% endif %}Articles{% endblock %}
+
+{% block content %}
+<div class="layout">
+    <aside class="sidebar">
+        <h3>Feeds</h3>
+        <ul class="feed-list">
+            <li class="feed-item {% if not current_feed %}active{% endif %}">
+                <a href="{{ url_for('main.index') }}">All Articles</a>
+            </li>
+            {% for feed in feeds %}
+            <li class="feed-item {% if current_feed and current_feed.id == feed.id %}active{% endif %}">
+                <a href="{{ url_for('main.feed_articles', feed_id=feed.id) }}">
+                    {{ feed.title }}
+                    <span class="feed-count">{{ feed.articles|selectattr('is_read', 'equalto', False)|list|length }}</span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        <form action="{{ url_for('main.mark_all_read') }}" method="POST" class="mark-all-form">
+            {% if current_feed %}
+            <input type="hidden" name="feed_id" value="{{ current_feed.id }}">
+            {% endif %}
+            <button type="submit" class="btn btn-secondary">Mark All Read</button>
+        </form>
+    </aside>
+
+    <section class="content">
+        <div class="content-header">
+            <h1>{% if current_feed %}{{ current_feed.title }}{% else %}All Articles{% endif %}</h1>
+            <span class="article-count">{{ articles.total }} articles</span>
+        </div>
+
+        {% if articles.items %}
+        <div class="article-list">
+            {% for article in articles.items %}
+            <article class="article-card {% if article.is_read %}read{% else %}unread{% endif %}">
+                <div class="article-header">
+                    <h2 class="article-title">
+                        <a href="{{ article.link }}" target="_blank" rel="noopener">{{ article.title }}</a>
+                    </h2>
+                    <span class="article-feed">{{ article.feed.title }}</span>
+                </div>
+                <div class="article-meta">
+                    <span class="article-date">{{ article.published.strftime('%Y-%m-%d %H:%M') }}</span>
+                    <button class="btn-read-toggle" data-article-id="{{ article.id }}">
+                        {% if article.is_read %}Mark as Unread{% else %}Mark as Read{% endif %}
+                    </button>
+                </div>
+                {% if article.summary %}
+                <div class="article-summary">{{ article.summary|striptags|truncate(200) }}</div>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+
+        {% if articles.pages > 1 %}
+        <div class="pagination">
+            {% if articles.has_prev %}
+                {% if current_feed %}
+                <a href="{{ url_for('main.feed_articles', feed_id=current_feed.id) }}?page={{ articles.prev_num }}" class="page-link">&laquo; Previous</a>
+                {% else %}
+                <a href="{{ url_for('main.index') }}?page={{ articles.prev_num }}" class="page-link">&laquo; Previous</a>
+                {% endif %}
+            {% endif %}
+            <span class="page-info">Page {{ articles.page }} of {{ articles.pages }}</span>
+            {% if articles.has_next %}
+                {% if current_feed %}
+                <a href="{{ url_for('main.feed_articles', feed_id=current_feed.id) }}?page={{ articles.next_num }}" class="page-link">Next &raquo;</a>
+                {% else %}
+                <a href="{{ url_for('main.index') }}?page={{ articles.next_num }}" class="page-link">Next &raquo;</a>
+                {% endif %}
+            {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="empty-state">No articles yet. Add some feeds in the <a href="{{ url_for('admin.admin') }}">Manage Feeds</a> page.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.btn-read-toggle').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const articleId = this.dataset.articleId;
+        const card = this.closest('.article-card');
+        fetch(`/article/${articleId}/toggle-read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_read) {
+                card.classList.remove('unread');
+                card.classList.add('read');
+                this.textContent = 'Mark as Unread';
+            } else {
+                card.classList.remove('read');
+                card.classList.add('unread');
+                this.textContent = 'Mark as Read';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

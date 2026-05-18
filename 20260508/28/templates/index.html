@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lorenz 混沌吸引子可视化</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #8892b0;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 25px;
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .slider-container {
+            margin-bottom: 18px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .slider-label span:first-child {
+            font-weight: 500;
+            color: #ccd6f6;
+        }
+
+        .slider-value {
+            background: rgba(78, 205, 196, 0.2);
+            color: #4ecdc4;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(78, 205, 196, 0.5);
+            transition: transform 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            color: #1a1a2e;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(78, 205, 196, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccd6f6;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .chart-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #plot {
+            width: 100%;
+            height: 700px;
+            border-radius: 10px;
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #8892b0;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ecdc4;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 40px;
+            border-radius: 10px;
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(78, 205, 196, 0.3);
+            border-top-color: #4ecdc4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            #plot {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🦋 Lorenz 混沌吸引子</h1>
+            <p class="subtitle">探索混沌理论之美 - 蝴蝶效应可视化</p>
+        </header>
+
+        <div class="main-content">
+            <div class="controls-panel">
+                <div class="control-group">
+                    <h3 class="section-title">系统参数</h3>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>σ (sigma)</span>
+                            <span class="slider-value" id="sigma-value">10.00</span>
+                        </div>
+                        <input type="range" id="sigma" min="0" max="50" step="0.1" value="10">
+                    </div>
+
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>ρ (rho)</span>
+                            <span class="slider-value" id="rho-value">28.00</span>
+                        </div>
+                        <input type="range" id="rho" min="0" max="100" step="0.1" value="28">
+                    </div>
+
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>β (beta)</span>
+                            <span class="slider-value" id="beta-value">2.67</span>
+                        </div>
+                        <input type="range" id="beta" min="0" max="10" step="0.01" value="2.67">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3 class="section-title">初始条件</h3>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>x₀</span>
+                            <span class="slider-value" id="x0-value">1.00</span>
+                        </div>
+                        <input type="range" id="x0" min="-20" max="20" step="0.1" value="1">
+                    </div>
+
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>y₀</span>
+                            <span class="slider-value" id="y0-value">1.00</span>
+                        </div>
+                        <input type="range" id="y0" min="-20" max="20" step="0.1" value="1">
+                    </div>
+
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>z₀</span>
+                            <span class="slider-value" id="z0-value">1.00</span>
+                        </div>
+                        <input type="range" id="z0" min="-20" max="20" step="0.1" value="1">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3 class="section-title">时间范围</h3>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>t 起始</span>
+                            <span class="slider-value" id="t_start-value">0.00</span>
+                        </div>
+                        <input type="range" id="t_start" min="0" max="100" step="0.1" value="0">
+                    </div>
+
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>t 结束</span>
+                            <span class="slider-value" id="t_end-value">50.00</span>
+                        </div>
+                        <input type="range" id="t_end" min="1" max="200" step="0.1" value="50">
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="solve-btn">求解并绘制</button>
+                    <button class="btn btn-secondary" id="reset-btn">重置</button>
+                </div>
+            </div>
+
+            <div class="chart-panel">
+                <div id="plot"></div>
+                <div class="info-bar">
+                    <div class="status">
+                        <span class="status-dot"></span>
+                        <span id="status-text">就绪</span>
+                    </div>
+                    <div>
+                        数据点: <span id="point-count">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <span>正在求解微分方程...</span>
+    </div>
+
+    <script>
+        const sliders = ['sigma', 'rho', 'beta', 'x0', 'y0', 'z0', 't_start', 't_end'];
+        
+        sliders.forEach(id => {
+            const slider = document.getElementById(id);
+            const valueDisplay = document.getElementById(id + '-value');
+            slider.addEventListener('input', () => {
+                valueDisplay.textContent = parseFloat(slider.value).toFixed(2);
+            });
+        });
+
+        function getParams() {
+            return {
+                sigma: parseFloat(document.getElementById('sigma').value),
+                rho: parseFloat(document.getElementById('rho').value),
+                beta: parseFloat(document.getElementById('beta').value),
+                x0: parseFloat(document.getElementById('x0').value),
+                y0: parseFloat(document.getElementById('y0').value),
+                z0: parseFloat(document.getElementById('z0').value),
+                t_start: parseFloat(document.getElementById('t_start').value),
+                t_end: parseFloat(document.getElementById('t_end').value)
+            };
+        }
+
+        function plotLorenz(data) {
+            const trace = {
+                x: data.x,
+                y: data.y,
+                z: data.z,
+                mode: 'lines',
+                type: 'scatter3d',
+                line: {
+                    width: 2,
+                    color: data.t,
+                    colorscale: 'Viridis',
+                    colorbar: {
+                        title: {
+                            text: '时间 t',
+                            font: { color: '#ccd6f6' }
+                        },
+                        tickfont: { color: '#8892b0' }
+                    }
+                },
+                hovertemplate: 't: %{marker.color:.2f}<br>x: %{x:.2f}<br>y: %{y:.2f}<br>z: %{z:.2f}<extra></extra>'
+            };
+
+            const startPoint = {
+                x: [data.x[0]],
+                y: [data.y[0]],
+                z: [data.z[0]],
+                mode: 'markers',
+                type: 'scatter3d',
+                marker: {
+                    size: 8,
+                    color: '#ff6b6b',
+                    symbol: 'circle'
+                },
+                name: '起点',
+                hovertemplate: '起点<br>x: %{x:.2f}<br>y: %{y:.2f}<br>z: %{z:.2f}<extra></extra>'
+            };
+
+            const endPoint = {
+                x: [data.x[data.x.length - 1]],
+                y: [data.y[data.y.length - 1]],
+                z: [data.z[data.z.length - 1]],
+                mode: 'markers',
+                type: 'scatter3d',
+                marker: {
+                    size: 8,
+                    color: '#4ecdc4',
+                    symbol: 'diamond'
+                },
+                name: '终点',
+                hovertemplate: '终点<br>x: %{x:.2f}<br>y: %{y:.2f}<br>z: %{z:.2f}<extra></extra>'
+            };
+
+            const layout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                scene: {
+                    xaxis: { 
+                        title: { text: 'X', font: { color: '#ccd6f6' } },
+                        tickfont: { color: '#8892b0' },
+                        gridcolor: 'rgba(255,255,255,0.1)',
+                        showbackground: false
+                    },
+                    yaxis: { 
+                        title: { text: 'Y', font: { color: '#ccd6f6' } },
+                        tickfont: { color: '#8892b0' },
+                        gridcolor: 'rgba(255,255,255,0.1)',
+                        showbackground: false
+                    },
+                    zaxis: { 
+                        title: { text: 'Z', font: { color: '#ccd6f6' } },
+                        tickfont: { color: '#8892b0' },
+                        gridcolor: 'rgba(255,255,255,0.1)',
+                        showbackground: false
+                    },
+                    bgcolor: 'rgba(0,0,0,0)'
+                },
+                margin: { l: 0, r: 0, t: 0, b: 0 },
+                showlegend: true,
+                legend: {
+                    font: { color: '#ccd6f6' },
+                    bgcolor: 'rgba(0,0,0,0.3)'
+                },
+                hovermode: 'closest'
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false,
+                modeBarButtonsToRemove: ['pan3d', 'resetCameraDefault3d'],
+                modeBarButtonsToAdd: ['toggleSpikelines'],
+                scrollZoom: true
+            };
+
+            Plotly.newPlot('plot', [trace, startPoint, endPoint], layout, config);
+            document.getElementById('point-count').textContent = data.x.length.toLocaleString();
+        }
+
+        async function solveAndPlot() {
+            const params = getParams();
+            
+            if (params.t_start >= params.t_end) {
+                alert('时间起始必须小于时间结束');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('status-text').textContent = '计算中...';
+
+            try {
+                const response = await fetch('/solve', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(params)
+                });
+
+                if (!response.ok) {
+                    throw new Error('求解失败');
+                }
+
+                const data = await response.json();
+                plotLorenz(data);
+                document.getElementById('status-text').textContent = '计算完成';
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('status-text').textContent = '错误: ' + error.message;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function resetParams() {
+            document.getElementById('sigma').value = 10;
+            document.getElementById('rho').value = 28;
+            document.getElementById('beta').value = 2.67;
+            document.getElementById('x0').value = 1;
+            document.getElementById('y0').value = 1;
+            document.getElementById('z0').value = 1;
+            document.getElementById('t_start').value = 0;
+            document.getElementById('t_end').value = 50;
+            
+            sliders.forEach(id => {
+                document.getElementById(id + '-value').textContent = 
+                    parseFloat(document.getElementById(id).value).toFixed(2);
+            });
+            
+            solveAndPlot();
+        }
+
+        document.getElementById('solve-btn').addEventListener('click', solveAndPlot);
+        document.getElementById('reset-btn').addEventListener('click', resetParams);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.repeat) {
+                solveAndPlot();
+            }
+            if (e.key === 'r' && e.ctrlKey) {
+                e.preventDefault();
+                resetParams();
+            }
+        });
+
+        solveAndPlot();
+    </script>
+</body>
+</html>

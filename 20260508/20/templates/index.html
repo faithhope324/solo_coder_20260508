@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 电影推荐系统{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>欢迎使用电影推荐系统</h1>
+    <p class="subtitle">基于用户协同过滤的个性化电影推荐</p>
+</div>
+
+<div class="card">
+    <h2>选择用户获取推荐</h2>
+    <form action="{{ url_for('recommend') }}" method="POST" class="form-inline">
+        <div class="form-group">
+            <label for="user_id">用户ID:</label>
+            <select id="user_id" name="user_id" required>
+                {% for uid in user_ids %}
+                <option value="{{ uid }}">用户 {{ uid }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="top_n">推荐数量:</label>
+            <input type="number" id="top_n" name="top_n" value="10" min="1" max="20">
+        </div>
+        <div class="form-group">
+            <label for="k">相似用户数 (K):</label>
+            <input type="number" id="k" name="k" value="3" min="1" max="5">
+        </div>
+        <button type="submit" class="btn btn-primary">获取推荐</button>
+    </form>
+</div>
+
+<div class="info-grid">
+    <div class="card info-card">
+        <h3>📊 算法原理</h3>
+        <p>使用基于用户的协同过滤算法，通过计算用户之间的余弦相似度，找到兴趣相似的用户群体。</p>
+    </div>
+    <div class="card info-card">
+        <h3>🎯 推荐逻辑</h3>
+        <p>推荐相似用户评分高但目标用户未看过的电影，并预测目标用户对这些电影的评分。</p>
+    </div>
+    <div class="card info-card">
+        <h3>📈 数据统计</h3>
+        <p>查看用户-物品评分矩阵和用户相似度矩阵的详细统计信息。</p>
+    </div>
+</div>
+{% endblock %}

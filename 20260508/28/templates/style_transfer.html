@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像风格迁移 - Neural Style Transfer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #8892b0;
+            font-size: 1.1rem;
+        }
+
+        .nav-links {
+            margin-top: 15px;
+        }
+
+        .nav-links a {
+            color: #4ecdc4;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #45b7d1;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .upload-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(78, 205, 196, 0.3);
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+        }
+
+        .upload-area input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #ccd6f6;
+            font-size: 0.95rem;
+        }
+
+        .upload-hint {
+            color: #8892b0;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .preview-container {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .preview-container.show {
+            display: block;
+        }
+
+        .preview-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 25px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #ccd6f6;
+            font-weight: 500;
+        }
+
+        .control-value {
+            background: rgba(78, 205, 196, 0.2);
+            color: #4ecdc4;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(78, 205, 196, 0.5);
+            transition: transform 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            color: #1a1a2e;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(78, 205, 196, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccd6f6;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 25px;
+            display: none;
+        }
+
+        .progress-section.show {
+            display: block;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #45b7d1, #ff6b6b);
+            border-radius: 15px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #1a1a2e;
+            min-width: 50px;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #ccd6f6;
+            margin-bottom: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status-pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .status-processing {
+            background: rgba(78, 205, 196, 0.2);
+            color: #4ecdc4;
+            animation: pulse 2s infinite;
+        }
+
+        .status-completed {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+        }
+
+        .status-failed {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .result-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-image-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .result-image {
+            max-width: 100%;
+            max-height: 600px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .comparison-item {
+            text-align: center;
+        }
+
+        .comparison-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .comparison-label {
+            margin-top: 8px;
+            color: #8892b0;
+            font-size: 0.9rem;
+        }
+
+        .error-message {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .info-note {
+            background: rgba(78, 205, 196, 0.1);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            color: #4ecdc4;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 图像风格迁移</h1>
+            <p class="subtitle">基于VGG19和Gram矩阵的神经风格迁移</p>
+            <div class="nav-links">
+                <a href="/">← 返回Lorenz混沌吸引子</a>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <h3 class="section-title">📷 内容图片</h3>
+                <div class="upload-area" id="content-upload">
+                    <input type="file" id="content-input" accept="image/png,image/jpeg,image/jpg">
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-text">点击或拖拽上传内容图片</div>
+                    <div class="upload-hint">支持 PNG、JPG、JPEG 格式</div>
+                </div>
+                <div class="preview-container" id="content-preview">
+                    <img class="preview-image" id="content-image" alt="内容图片预览">
+                </div>
+            </div>
+
+            <div class="upload-section">
+                <h3 class="section-title">🎭 风格图片</h3>
+                <div class="upload-area" id="style-upload">
+                    <input type="file" id="style-input" accept="image/png,image/jpeg,image/jpg">
+                    <div class="upload-icon">🎨</div>
+                    <div class="upload-text">点击或拖拽上传风格图片</div>
+                    <div class="upload-hint">支持 PNG、JPG、JPEG 格式</div>
+                </div>
+                <div class="preview-container" id="style-preview">
+                    <img class="preview-image" id="style-image" alt="风格图片预览">
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <h3 class="section-title">⚙️ 参数设置</h3>
+            <div class="controls-grid">
+                <div class="control-group">
+                    <label class="control-label">
+                        <span>迁移模式</span>
+                    </label>
+                    <select id="mode">
+                        <option value="fast">快速模式 (Adam优化器)</option>
+                        <option value="quality">高质量模式 (LBFGS优化器)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        <span>迭代次数</span>
+                        <span class="control-value" id="steps-value">200</span>
+                    </label>
+                    <input type="range" id="num_steps" min="50" max="500" step="10" value="200">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        <span>风格权重</span>
+                        <span class="control-value" id="style-value">10000</span>
+                    </label>
+                    <input type="range" id="style_weight" min="1000" max="100000" step="1000" value="10000">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        <span>内容权重</span>
+                        <span class="control-value" id="content-value">1</span>
+                    </label>
+                    <input type="range" id="content_weight" min="0.1" max="10" step="0.1" value="1">
+                </div>
+            </div>
+
+            <div class="model-status" id="model-status">
+                <span class="status-badge status-pending" id="model-badge">模型未加载</span>
+                <span id="model-text" style="margin-left: 10px; color: #8892b0;">请先预加载VGG19模型</span>
+            </div>
+
+            <div class="btn-group" style="margin-top: 20px;">
+                <button class="btn btn-secondary" id="preload-btn">预加载模型</button>
+                <button class="btn btn-primary" id="transfer-btn" disabled>开始风格迁移</button>
+                <button class="btn btn-secondary" id="reset-btn" type="button">重置</button>
+            </div>
+
+            <div class="info-note">
+                ⚠️ <strong>重要</strong>：首次使用请先点击"预加载模型"按钮下载VGG19权重（约548MB）。<br>
+                💡 提示：快速模式使用Adam优化器，速度较快；高质量模式使用LBFGS优化器，效果更好但耗时较长。<br>
+                风格权重越高，风格化效果越明显；内容权重越高，内容保留越完整。
+            </div>
+        </div>
+
+        <div class="progress-section" id="progress-section">
+            <span class="status-badge status-processing" id="status-badge">处理中...</span>
+            <div class="progress-text" id="progress-text">正在准备图片...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar" style="width: 0%">0%</div>
+            </div>
+            <div class="error-message" id="error-message"></div>
+        </div>
+
+        <div class="result-section" id="result-section">
+            <h3 class="section-title">✨ 迁移结果</h3>
+            <div class="result-image-container">
+                <img class="result-image" id="result-image" alt="风格迁移结果">
+            </div>
+            <div class="comparison">
+                <div class="comparison-item">
+                    <img id="comparison-content" alt="内容图片">
+                    <div class="comparison-label">内容图片</div>
+                </div>
+                <div class="comparison-item">
+                    <img id="comparison-style" alt="风格图片">
+                    <div class="comparison-label">风格图片</div>
+                </div>
+                <div class="comparison-item">
+                    <img id="comparison-result" alt="结果图片">
+                    <div class="comparison-label">迁移结果</div>
+                </div>
+            </div>
+            <div class="btn-group" style="margin-top: 20px;">
+                <button class="btn btn-primary" id="download-btn">下载结果图片</button>
+                <button class="btn btn-secondary" id="new-transfer-btn">新的迁移</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const contentInput = document.getElementById('content-input');
+            const styleInput = document.getElementById('style-input');
+            const contentPreview = document.getElementById('content-preview');
+            const stylePreview = document.getElementById('style-preview');
+            const contentImage = document.getElementById('content-image');
+            const styleImage = document.getElementById('style-image');
+            const transferBtn = document.getElementById('transfer-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const preloadBtn = document.getElementById('preload-btn');
+            const progressSection = document.getElementById('progress-section');
+            const resultSection = document.getElementById('result-section');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const statusBadge = document.getElementById('status-badge');
+            const errorMessage = document.getElementById('error-message');
+            const resultImage = document.getElementById('result-image');
+            const downloadBtn = document.getElementById('download-btn');
+            const newTransferBtn = document.getElementById('new-transfer-btn');
+            const modelBadge = document.getElementById('model-badge');
+            const modelText = document.getElementById('model-text');
+
+            let modelLoaded = false;
+            let contentFile = null;
+            let styleFile = null;
+            let currentTaskId = null;
+            let progressInterval = null;
+            let resultFilename = null;
+
+            const sliders = ['num_steps', 'style_weight', 'content_weight'];
+            sliders.forEach(id => {
+                const slider = document.getElementById(id);
+                const valueDisplay = document.getElementById(id + '-value');
+                slider.addEventListener('input', () => {
+                    valueDisplay.textContent = slider.value;
+                });
+            });
+
+            function checkModelStatus() {
+                fetch('/model-status')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.loaded) {
+                            modelLoaded = true;
+                            modelBadge.className = 'status-badge status-completed';
+                            modelBadge.textContent = '模型已加载';
+                            modelText.textContent = '设备: ' + data.device;
+                            preloadBtn.disabled = true;
+                            preloadBtn.textContent = '模型已加载';
+                        } else if (data.loading) {
+                            modelBadge.className = 'status-badge status-processing';
+                            modelBadge.textContent = '模型加载中...';
+                            modelText.textContent = '正在下载VGG19权重，请耐心等待';
+                            preloadBtn.disabled = true;
+                            setTimeout(checkModelStatus, 2000);
+                        } else if (data.error) {
+                            modelBadge.className = 'status-badge status-failed';
+                            modelBadge.textContent = '加载失败';
+                            modelText.textContent = '错误: ' + data.error;
+                        } else {
+                            modelBadge.className = 'status-badge status-pending';
+                            modelBadge.textContent = '模型未加载';
+                            modelText.textContent = '请先预加载VGG19模型';
+                        }
+                        checkReady();
+                    })
+                    .catch(error => {
+                        console.error('检查模型状态失败:', error);
+                    });
+            }
+
+            preloadBtn.addEventListener('click', async () => {
+                preloadBtn.disabled = true;
+                preloadBtn.textContent = '加载中...';
+                modelBadge.className = 'status-badge status-processing';
+                modelBadge.textContent = '模型加载中...';
+                modelText.textContent = '正在下载VGG19权重 (约548MB)，请耐心等待...';
+
+                try {
+                    const response = await fetch('/preload-model', {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        modelLoaded = true;
+                        modelBadge.className = 'status-badge status-completed';
+                        modelBadge.textContent = '模型已加载';
+                        modelText.textContent = '模型加载完成，可以开始风格迁移';
+                        preloadBtn.textContent = '模型已加载';
+                    } else {
+                        throw new Error(data.message || '加载失败');
+                    }
+                } catch (error) {
+                    modelBadge.className = 'status-badge status-failed';
+                    modelBadge.textContent = '加载失败';
+                    modelText.textContent = '错误: ' + error.message;
+                    preloadBtn.disabled = false;
+                    preloadBtn.textContent = '重新加载';
+                }
+                checkReady();
+            });
+
+            function setupUpload(inputId, previewId, imageId, fileVar) {
+                const input = document.getElementById(inputId);
+                const preview = document.getElementById(previewId);
+                const image = document.getElementById(imageId);
+                const uploadArea = input.parentElement;
+
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.add('dragover');
+                });
+
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.classList.remove('dragover');
+                });
+
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const dt = new DataTransfer();
+                        dt.items.add(files[0]);
+                        input.files = dt.files;
+                        handleFileSelect();
+                    }
+                });
+
+                input.addEventListener('change', handleFileSelect);
+
+                function handleFileSelect() {
+                    if (input.files && input.files[0]) {
+                        const file = input.files[0];
+                        if (fileVar === 'content') contentFile = file;
+                        else styleFile = file;
+
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            image.src = e.target.result;
+                            preview.classList.add('show');
+                            checkReady();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            }
+
+            setupUpload('content-input', 'content-preview', 'content-image', 'content');
+            setupUpload('style-input', 'style-preview', 'style-image', 'style');
+
+            function checkReady() {
+                if (contentFile && styleFile && modelLoaded) {
+                    transferBtn.disabled = false;
+                } else {
+                    transferBtn.disabled = true;
+                }
+            }
+
+            transferBtn.addEventListener('click', async () => {
+                if (!contentFile || !styleFile || !modelLoaded) return;
+
+                const formData = new FormData();
+                formData.append('content', contentFile);
+                formData.append('style', styleFile);
+                formData.append('mode', document.getElementById('mode').value);
+                formData.append('num_steps', document.getElementById('num_steps').value);
+                formData.append('style_weight', document.getElementById('style_weight').value);
+                formData.append('content_weight', document.getElementById('content_weight').value);
+
+                transferBtn.disabled = true;
+                resetBtn.disabled = true;
+                progressSection.classList.add('show');
+                resultSection.classList.remove('show');
+                errorMessage.classList.remove('show');
+                statusBadge.className = 'status-badge status-pending';
+                statusBadge.textContent = '准备中...';
+                progressBar.style.width = '0%';
+                progressBar.textContent = '0%';
+                progressText.textContent = '正在上传图片...';
+
+                try {
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || '上传失败');
+                    }
+
+                    currentTaskId = data.task_id;
+                    startPolling();
+                } catch (error) {
+                    showError(error.message);
+                    transferBtn.disabled = false;
+                    resetBtn.disabled = false;
+                }
+            });
+
+            function startPolling() {
+                statusBadge.className = 'status-badge status-processing';
+                statusBadge.textContent = '处理中...';
+                progressText.textContent = '正在进行风格迁移...';
+
+                progressInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch(`/progress/${currentTaskId}`);
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.error || '查询进度失败');
+                        }
+
+                        progressBar.style.width = data.progress + '%';
+                        progressBar.textContent = data.progress + '%';
+
+                        if (data.total_steps > 0) {
+                            progressText.textContent = `迭代步数: ${data.step} / ${data.total_steps}`;
+                        }
+
+                        if (data.status === 'completed') {
+                            clearInterval(progressInterval);
+                            showResult(data.result_url);
+                        } else if (data.status === 'failed') {
+                            clearInterval(progressInterval);
+                            showError(data.error || '处理失败');
+                        }
+                    } catch (error) {
+                        console.error('Polling error:', error);
+                    }
+                }, 500);
+            }
+
+            function showResult(resultUrl) {
+                statusBadge.className = 'status-badge status-completed';
+                statusBadge.textContent = '完成!';
+                progressText.textContent = '风格迁移完成!';
+
+                resultImage.src = resultUrl;
+                document.getElementById('comparison-content').src = contentImage.src;
+                document.getElementById('comparison-style').src = styleImage.src;
+                document.getElementById('comparison-result').src = resultUrl;
+
+                resultFilename = resultUrl.split('/').pop();
+                resultSection.classList.add('show');
+
+                transferBtn.disabled = false;
+                resetBtn.disabled = false;
+            }
+
+            function showError(message) {
+                statusBadge.className = 'status-badge status-failed';
+                statusBadge.textContent = '失败';
+                progressText.textContent = '处理过程中出现错误';
+                errorMessage.textContent = message;
+                errorMessage.classList.add('show');
+
+                transferBtn.disabled = false;
+                resetBtn.disabled = false;
+            }
+
+            resetBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                contentFile = null;
+                styleFile = null;
+                contentInput.value = '';
+                styleInput.value = '';
+                contentPreview.classList.remove('show');
+                stylePreview.classList.remove('show');
+                progressSection.classList.remove('show');
+                resultSection.classList.remove('show');
+                errorMessage.classList.remove('show');
+
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                    progressInterval = null;
+                }
+                currentTaskId = null;
+                resultFilename = null;
+                checkReady();
+            });
+
+            downloadBtn.addEventListener('click', () => {
+                if (resultFilename) {
+                    window.open(`/download/${resultFilename}`, '_blank');
+                }
+            });
+
+            newTransferBtn.addEventListener('click', () => {
+                resultSection.classList.remove('show');
+            });
+
+            checkModelStatus();
+        });
+    </script>
+</body>
+</html>

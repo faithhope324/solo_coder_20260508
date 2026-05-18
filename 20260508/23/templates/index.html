@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间序列预测平台</title>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <span class="title-icon">📈</span>
+                    时间序列预测平台
+                </h1>
+                <p class="subtitle">上传您的时间序列数据，使用ARIMA或Prophet模型进行智能预测</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="sidebar">
+                <div class="card upload-card">
+                    <h2 class="card-title">
+                        <span class="card-icon">📁</span>
+                        数据上传
+                    </h2>
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" id="fileInput" accept=".csv" hidden>
+                        <div class="upload-content">
+                            <div class="upload-icon">⬆️</div>
+                            <p class="upload-text">点击或拖拽CSV文件到此处</p>
+                            <p class="upload-hint">支持格式: CSV，两列：日期 + 数值</p>
+                        </div>
+                    </div>
+                    <div class="file-info" id="fileInfo" style="display: none;">
+                        <div class="file-name" id="fileName"></div>
+                        <div class="file-meta" id="fileMeta"></div>
+                    </div>
+                    <div class="preview-table" id="previewTable" style="display: none;">
+                        <h3>数据预览</h3>
+                        <table id="previewDataTable"></table>
+                    </div>
+                </div>
+
+                <div class="card config-card">
+                    <h2 class="card-title">
+                        <span class="card-icon">⚙️</span>
+                        预测配置
+                    </h2>
+                    
+                    <div class="form-group">
+                        <label for="modelSelect">选择模型</label>
+                        <select id="modelSelect" class="form-control">
+                            <option value="arima">ARIMA 模型</option>
+                            <option value="prophet">Facebook Prophet</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="periodsInput">预测步数</label>
+                        <input type="number" id="periodsInput" class="form-control" value="30" min="1" max="1000">
+                        <span class="hint">预测未来N个时间点 (1-1000)</span>
+                    </div>
+
+                    <div class="arima-params" id="arimaParams">
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="autoParams" checked>
+                                自动选择ARIMA参数
+                            </label>
+                        </div>
+                        
+                        <div class="manual-params" id="manualParams" style="display: none;">
+                            <div class="param-row">
+                                <label>p (自回归阶数)</label>
+                                <input type="range" id="paramP" class="slider" min="0" max="10" value="1">
+                                <span class="slider-value" id="paramPValue">1</span>
+                            </div>
+                            <div class="param-row">
+                                <label>d (差分阶数)</label>
+                                <input type="range" id="paramD" class="slider" min="0" max="3" value="1">
+                                <span class="slider-value" id="paramDValue">1</span>
+                            </div>
+                            <div class="param-row">
+                                <label>q (移动平均阶数)</label>
+                                <input type="range" id="paramQ" class="slider" min="0" max="10" value="1">
+                                <span class="slider-value" id="paramQValue">1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="predictBtn" disabled>
+                        <span class="btn-text">开始预测</span>
+                        <span class="btn-loading" style="display: none;">预测中...</span>
+                    </button>
+                </div>
+
+                <div class="card result-card" id="resultCard" style="display: none;">
+                    <h2 class="card-title">
+                        <span class="card-icon">📊</span>
+                        预测结果
+                    </h2>
+                    <div class="model-info" id="modelInfo"></div>
+                    <div class="metrics-grid" id="metricsGrid"></div>
+                    <button class="btn btn-secondary" id="downloadBtn">
+                        下载预测结果
+                    </button>
+                </div>
+            </div>
+
+            <div class="main-panel">
+                <div class="card chart-card">
+                    <h2 class="card-title">
+                        <span class="card-icon">📉</span>
+                        数据可视化
+                    </h2>
+                    <div class="chart-container" id="chartContainer">
+                        <div class="chart-placeholder" id="chartPlaceholder">
+                            <div class="placeholder-icon">📊</div>
+                            <p>上传数据并点击"开始预测"查看图表</p>
+                        </div>
+                        <div id="chart" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="card forecast-table-card" id="forecastTableCard" style="display: none;">
+                    <h2 class="card-title">
+                        <span class="card-icon">📋</span>
+                        预测数据详情
+                    </h2>
+                    <div class="table-wrapper">
+                        <table id="forecastTable">
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>预测值</th>
+                                    <th>下限</th>
+                                    <th>上限</th>
+                                </tr>
+                            </thead>
+                            <tbody id="forecastTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

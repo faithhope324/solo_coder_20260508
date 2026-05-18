@@ -1,0 +1,24 @@
+{
+  "intersection_id": "INT_003",
+  "model_path": "saved_models\\lstm_INT_003_20260516_170827.pth",
+  "hyperparams": {
+    "input_size": 1,
+    "output_size": 1,
+    "hidden_size": 64,
+    "num_layers": 2,
+    "dropout": 0.2,
+    "epochs": 50,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "early_stopping_patience": 8,
+    "seq_length": 24
+  },
+  "training_history": {
+    "final_train_loss": 0.0018260800361949226,
+    "final_val_loss": 0.0014101702254265547,
+    "best_val_loss": 0.0013910806737840176,
+    "epochs": 50,
+    "training_time_seconds": 11.710748
+  },
+  "timestamp": "20260516_170827"
+}

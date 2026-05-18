@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Feeds{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="page-header">
+        <h1>Manage RSS Feeds</h1>
+        <form action="{{ url_for('admin.refresh_all') }}" method="POST">
+            <button type="submit" class="btn btn-primary">Refresh All</button>
+        </form>
+    </div>
+
+    <div class="add-feed-form">
+        <h2>Add New Feed</h2>
+        <form action="{{ url_for('admin.add_feed') }}" method="POST">
+            <input type="url" name="url" placeholder="Enter RSS feed URL" required>
+            <button type="submit" class="btn btn-primary">Add Feed</button>
+        </form>
+    </div>
+
+    <div class="feeds-table-container">
+        <h2>Your Feeds ({{ feeds|length }})</h2>
+        {% if feeds %}
+        <table class="feeds-table">
+            <thead>
+                <tr>
+                <th>Title</th>
+                <th>URL</th>
+                <th>Articles</th>
+                <th>Last Fetched</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for feed in feeds %}
+                <tr>
+                    <td><strong>{{ feed.title }}</strong></td>
+                    <td><code>{{ feed.url }}</code></td>
+                    <td>{{ feed.articles|length }}</td>
+                    <td>
+                        {% if feed.last_fetched %}
+                        {{ feed.last_fetched.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                        Never
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <form action="{{ url_for('admin.refresh_feed', feed_id=feed.id) }}" method="POST" style="display: inline;">
+                            <button type="submit" class="btn btn-small btn-secondary">Refresh</button>
+                        </form>
+                        <form action="{{ url_for('admin.delete_feed', feed_id=feed.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this feed?');">
+                            <button type="submit" class="btn btn-small btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            </table>
+        {% else %}
+        <p class="empty-state">No feeds added yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

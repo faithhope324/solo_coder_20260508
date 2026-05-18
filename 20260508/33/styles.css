@@ -1,0 +1,242 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.info-panel {
+  display: flex;
+  gap: 40px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 15px 40px;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.info-item .label {
+  color: #888;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.info-item .value {
+  color: #fff;
+  font-size: 32px;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+}
+
+.game-area {
+  position: relative;
+  width: 600px;
+  height: 600px;
+}
+
+#gameCanvas {
+  border-radius: 10px;
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+}
+
+.traffic-light {
+  position: absolute;
+  width: 40px;
+  height: 100px;
+  background: #222;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 10;
+}
+
+.traffic-light:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+}
+
+.traffic-light:active {
+  transform: scale(0.95);
+}
+
+.traffic-light.north {
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.traffic-light.south {
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.traffic-light.east {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.traffic-light.west {
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.light {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #444;
+  transition: all 0.3s;
+}
+
+.light.red.active {
+  background: #ff4757;
+  box-shadow: 0 0 20px #ff4757, 0 0 40px #ff4757;
+}
+
+.light.yellow.active {
+  background: #ffa502;
+  box-shadow: 0 0 20px #ffa502, 0 0 40px #ffa502;
+}
+
+.light.green.active {
+  background: #2ed573;
+  box-shadow: 0 0 20px #2ed573, 0 0 40px #2ed573;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+  z-index: 100;
+  transition: opacity 0.3s;
+}
+
+.overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.overlay-content {
+  text-align: center;
+  color: #fff;
+  padding: 40px;
+}
+
+.overlay-content h1 {
+  font-size: 36px;
+  margin-bottom: 15px;
+  background: linear-gradient(135deg, #ffa502, #ff6348);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.overlay-content p {
+  font-size: 18px;
+  margin-bottom: 30px;
+  color: #aaa;
+  line-height: 1.6;
+}
+
+.btn {
+  padding: 15px 50px;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn:not(:disabled):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.btn:not(:disabled):active {
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:not(.secondary) {
+  background: linear-gradient(135deg, #2ed573, #1e90ff);
+  color: #fff;
+}
+
+.btn.secondary {
+  background: linear-gradient(135deg, #ff6348, #ff4757);
+  color: #fff;
+}
+
+.controls {
+  display: flex;
+  gap: 20px;
+}
+
+@media (max-width: 640px) {
+  .game-area {
+    width: 100vw;
+    height: 100vw;
+    max-width: 600px;
+    max-height: 600px;
+  }
+  
+  #gameCanvas {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .info-panel {
+    gap: 20px;
+    padding: 10px 20px;
+  }
+  
+  .info-item .value {
+    font-size: 24px;
+  }
+}

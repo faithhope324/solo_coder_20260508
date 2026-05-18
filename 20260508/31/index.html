@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>员工绩效仪表板</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise-overlay"></div>
+  
+  <header class="header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1 class="main-title">员工绩效仪表板</h1>
+        <p class="subtitle">实时监控各部门 KPI 完成情况与员工绩效表现</p>
+      </div>
+      <div class="controls">
+        <div class="filter-wrapper">
+          <label for="quarter-select" class="filter-label">季度筛选</label>
+          <select id="quarter-select" class="quarter-select">
+            <option value="Q1">2026 年第一季度</option>
+            <option value="Q2" selected>2026 年第二季度</option>
+            <option value="Q3">2026 年第三季度</option>
+            <option value="Q4">2026 年第四季度</option>
+          </select>
+        </div>
+        <button id="refresh-btn" class="refresh-btn" title="刷新数据">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+          </svg>
+          刷新
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <section class="department-section">
+      <h2 class="section-title">
+        <span class="title-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="7" height="7" x="3" y="3" rx="1"/>
+            <rect width="7" height="7" x="14" y="3" rx="1"/>
+            <rect width="7" height="7" x="14" y="14" rx="1"/>
+            <rect width="7" height="7" x="3" y="14" rx="1"/>
+          </svg>
+        </span>
+        部门 KPI 完成率
+      </h2>
+      <div id="department-cards" class="department-grid"></div>
+    </section>
+
+    <div class="data-section">
+      <section class="ranking-section">
+        <h2 class="section-title">
+          <span class="title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+              <path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z"/>
+              <path d="M12 12h.01"/>
+              <path d="M12 16h.01"/>
+              <path d="M12 8h.01"/>
+            </svg>
+          </span>
+          个人绩效排名
+        </h2>
+        <div class="table-container">
+          <table class="ranking-table">
+            <thead>
+              <tr>
+                <th class="sortable" data-sort="rank">排名</th>
+                <th class="sortable" data-sort="name">姓名</th>
+                <th class="sortable" data-sort="department">部门</th>
+                <th class="sortable" data-sort="sales">销售额</th>
+                <th class="sortable" data-sort="completion">完成率</th>
+                <th class="sortable" data-sort="rating">评级</th>
+              </tr>
+            </thead>
+            <tbody id="ranking-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="pie-section">
+        <h2 class="section-title">
+          <span class="title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+              <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+            </svg>
+          </span>
+          绩优员工占比
+        </h2>
+        <div class="pie-wrapper">
+          <div class="pie-chart-container">
+            <svg id="pie-chart" viewBox="0 0 200 200"></svg>
+            <div class="pie-center">
+              <div class="pie-center-number" id="total-employees">0</div>
+              <div class="pie-center-label">总人数</div>
+            </div>
+          </div>
+          <div class="pie-legend" id="pie-legend"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

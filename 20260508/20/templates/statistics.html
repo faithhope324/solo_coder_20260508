@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}数据统计 - 电影推荐系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>数据统计与矩阵可视化</h1>
+</div>
+
+<div class="stats-grid">
+    <div class="card stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.n_users }}</div>
+            <div class="stat-label">用户总数</div>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">🎬</div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.n_movies }}</div>
+            <div class="stat-label">电影总数</div>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.total_ratings }}</div>
+            <div class="stat-label">评分总数</div>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-content">
+            <div class="stat-value">{{ stats.sparsity }}%</div>
+            <div class="stat-label">矩阵稀疏度</div>
+        </div>
+    </div>
+</div>
+
+<div class="two-column">
+    <div class="card">
+        <h2>评分统计</h2>
+        <div class="stat-detail">
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">平均评分:</span>
+                <span class="stat-detail-value">{{ stats.avg_rating }}</span>
+            </div>
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">最低评分:</span>
+                <span class="stat-detail-value">{{ stats.min_rating }}</span>
+            </div>
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">最高评分:</span>
+                <span class="stat-detail-value">{{ stats.max_rating }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <h2>用户评分统计</h2>
+        <div class="stat-detail">
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">平均评分数:</span>
+                <span class="stat-detail-value">{{ stats.avg_ratings_per_user }}</span>
+            </div>
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">最少评分数:</span>
+                <span class="stat-detail-value">{{ stats.min_ratings_per_user }}</span>
+            </div>
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">最多评分数:</span>
+                <span class="stat-detail-value">{{ stats.max_ratings_per_user }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="two-column">
+    <div class="card">
+        <h2>电影评分统计</h2>
+        <div class="stat-detail">
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">平均评分数:</span>
+                <span class="stat-detail-value">{{ stats.avg_ratings_per_movie }}</span>
+            </div>
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">最少评分数:</span>
+                <span class="stat-detail-value">{{ stats.min_ratings_per_movie }}</span>
+            </div>
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">最多评分数:</span>
+                <span class="stat-detail-value">{{ stats.max_ratings_per_movie }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <h2>用户相似度统计</h2>
+        <div class="stat-detail">
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">平均相似度:</span>
+                <span class="stat-detail-value">{{ stats.avg_similarity }}</span>
+            </div>
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">最低相似度:</span>
+                <span class="stat-detail-value">{{ stats.min_similarity }}</span>
+            </div>
+            <div class="stat-detail-item">
+                <span class="stat-detail-label">最高相似度:</span>
+                <span class="stat-detail-value">{{ stats.max_similarity }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>用户-物品评分矩阵</h2>
+    <div class="matrix-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>用户ID</th>
+                    {% for mid in movie_ids %}
+                    <th>电影{{ mid }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in user_item_matrix %}
+                <tr>
+                    <td class="user-cell">用户{{ row.userId }}</td>
+                    {% for mid in movie_ids %}
+                    <td class="rating-cell {% if row[str(mid)] != '-' %}rated{% endif %}">
+                        {{ row[str(mid)] }}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2>用户相似度矩阵 (余弦相似度)</h2>
+    <div class="matrix-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>用户ID</th>
+                    {% for uid in user_ids_matrix %}
+                    <th>用户{{ uid }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in similarity_matrix %}
+                <tr>
+                    <td class="user-cell">用户{{ row.userId }}</td>
+                    {% for uid in user_ids_matrix %}
+                    <td class="similarity-cell" data-sim="{{ row[str(uid)] }}">
+                        {{ row[str(uid)] }}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

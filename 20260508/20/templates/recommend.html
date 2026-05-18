@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}电影推荐 - 电影推荐系统{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>为用户 {{ user_id }} 推荐电影</h1>
+</div>
+
+<div class="card">
+    <h2>重新选择参数</h2>
+    <form action="{{ url_for('recommend') }}" method="POST" class="form-inline">
+        <div class="form-group">
+            <label for="user_id">用户ID:</label>
+            <select id="user_id" name="user_id" required>
+                {% for uid in user_ids %}
+                <option value="{{ uid }}" {% if uid == user_id %}selected{% endif %}>用户 {{ uid }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="top_n">推荐数量:</label>
+            <input type="number" id="top_n" name="top_n" value="{{ top_n }}" min="1" max="20">
+        </div>
+        <div class="form-group">
+            <label for="k">相似用户数 (K):</label>
+            <input type="number" id="k" name="k" value="{{ k }}" min="1" max="5">
+        </div>
+        <button type="submit" class="btn btn-primary">更新推荐</button>
+    </form>
+</div>
+
+<div class="two-column">
+    <div class="card">
+        <h2>🎬 推荐电影列表</h2>
+        {% if recommendations %}
+        <div class="movie-list">
+            {% for movie in recommendations %}
+            <div class="movie-item">
+                <div class="movie-rank">{{ loop.index }}</div>
+                <div class="movie-info">
+                    <div class="movie-title">{{ movie.title }}</div>
+                </div>
+                <div class="movie-prediction">
+                    <span class="prediction-label">预测评分</span>
+                    <span class="prediction-value">{{ movie.predicted_rating }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>没有找到推荐电影。</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>👥 相似用户 (Top {{ k }})</h2>
+        {% if similar_users %}
+        <div class="similar-users">
+            {% for user in similar_users %}
+            <div class="similar-user-item">
+                <div class="user-avatar">U{{ user.userId }}</div>
+                <div class="user-info">
+                    <div class="user-id">用户 {{ user.userId }}</div>
+                    <div class="similarity-bar">
+                        <div class="similarity-fill" style="width: {{ user.similarity * 100 }}%"></div>
+                    </div>
+                </div>
+                <div class="similarity-value">{{ user.similarity }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>没有找到相似用户。</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <h2>📚 用户 {{ user_id }} 已评分的电影</h2>
+    {% if rated_movies %}
+    <div class="rated-movies-grid">
+        {% for movie in rated_movies %}
+        <div class="rated-movie-item">
+            <div class="rated-movie-title">{{ movie.title }}</div>
+            <div class="rated-movie-rating">
+                <span class="stars">
+                    {% for i in range(5) %}
+                    {% if i < movie.rating // 1 %}
+                    ★
+                    {% elif i < movie.rating %}
+                    ☆
+                    {% else %}
+                    ☆
+                    {% endif %}
+                    {% endfor %}
+                </span>
+                <span class="rating-number">{{ movie.rating }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>该用户还没有评分任何电影。</p>
+    {% endif %}
+</div>
+{% endblock %}

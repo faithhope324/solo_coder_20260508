@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQL 格式化和美化器</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>SQL 格式化和美化器</h1>
+      <p>输入混乱的 SQL 语句，自动缩进、关键字大写、语法高亮</p>
+    </header>
+
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <label for="dialect-select">方言:</label>
+        <select id="dialect-select">
+          <option value="mysql">MySQL</option>
+          <option value="postgresql">PostgreSQL</option>
+        </select>
+      </div>
+
+      <div class="toolbar-group">
+        <label for="indent-size">缩进:</label>
+        <select id="indent-size">
+          <option value="2">2 空格</option>
+          <option value="4">4 空格</option>
+          <option value="8">8 空格</option>
+        </select>
+      </div>
+
+      <div class="toolbar-group">
+        <label for="example-select">示例:</label>
+        <select id="example-select">
+          <option value="">-- 加载示例 --</option>
+          <option value="simple">简单查询</option>
+          <option value="complex">复杂查询</option>
+          <option value="join">多表连接</option>
+          <option value="insert">插入数据</option>
+          <option value="update">更新数据</option>
+          <option value="create">创建表</option>
+        </select>
+      </div>
+
+      <div class="toolbar-group" style="margin-left: auto;">
+        <button id="btn-format" class="btn-primary">
+          <span>✨</span> 格式化
+        </button>
+        <button id="btn-minify" class="btn-secondary">
+          <span>📦</span> 压缩为一行
+        </button>
+        <button id="btn-copy" class="btn-success">
+          <span>📋</span> 复制
+        </button>
+        <button id="btn-clear" class="btn-danger">
+          <span>🗑️</span> 清空
+        </button>
+      </div>
+    </div>
+
+    <div class="editor-container">
+      <div class="editor-panel">
+        <div class="panel-header">
+          <h2>输入 SQL</h2>
+        </div>
+        <div class="editor-wrapper">
+          <textarea id="sql-input" placeholder="在此输入 SQL 语句..."></textarea>
+        </div>
+      </div>
+
+      <div class="editor-panel">
+        <div class="panel-header">
+          <h2>格式化结果</h2>
+          <span id="stats" class="stats"></span>
+        </div>
+        <div class="editor-wrapper">
+          <pre id="sql-output"></pre>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>
+        快捷键: <kbd>Ctrl</kbd> + <kbd>Enter</kbd> 格式化 | 
+        <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> 复制 | 
+        <kbd>Tab</kbd> 插入缩进
+      </p>
+    </footer>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/pgsql.min.js"></script>
+  <script src="js/sqlFormatter.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

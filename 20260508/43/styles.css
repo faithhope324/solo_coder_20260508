@@ -1,0 +1,267 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.canvas-section, .result-section {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.toolbar {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    background: #667eea;
+    color: white;
+}
+
+.brush-size {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.brush-size input[type="range"] {
+    width: 100px;
+    cursor: pointer;
+}
+
+.canvas-wrapper {
+    border: 3px dashed #ddd;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #fafafa;
+    position: relative;
+}
+
+#drawingCanvas {
+    display: block;
+    cursor: crosshair;
+    background: white;
+}
+
+.examples {
+    margin-top: 25px;
+}
+
+.examples h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.example-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.example-btn {
+    padding: 10px;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.example-btn:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.latex-output, .rendered-output, .recognition-info {
+    margin-bottom: 25px;
+}
+
+.latex-output h3, .rendered-output h3, .recognition-info h3 {
+    color: #333;
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+}
+
+.latex-code-wrapper {
+    background: #2d2d2d;
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#latexCode {
+    color: #7ec699;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    flex: 1;
+    word-break: break-all;
+    line-height: 1.5;
+}
+
+.math-display {
+    background: #f8f9fa;
+    padding: 30px;
+    border-radius: 15px;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e9ecef;
+    overflow-x: auto;
+}
+
+.info-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.info-content ul {
+    list-style: none;
+    margin: 10px 0;
+    padding-left: 0;
+}
+
+.info-content li {
+    padding: 5px 0;
+    color: #555;
+    padding-left: 20px;
+    position: relative;
+}
+
+.info-content li::before {
+    content: "✓";
+    color: #667eea;
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+.tip {
+    background: #fff3cd;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    color: #856404;
+    font-size: 0.9rem;
+}
+
+.debug-info {
+    margin-top: 20px;
+}
+
+.debug-info h3 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+#debugOutput {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 15px;
+    border-radius: 10px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    max-height: 250px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border: 1px solid #333;
+}
+
+@media (max-width: 900px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+    
+    header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .example-buttons {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

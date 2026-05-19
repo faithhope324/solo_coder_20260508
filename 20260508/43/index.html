@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手写数学公式识别</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>✍️ 手写数学公式识别</h1>
+            <p class="subtitle">在左侧画板手写公式，右侧将自动渲染为 LaTeX</p>
+        </header>
+
+        <div class="main-content">
+            <div class="canvas-section">
+                <div class="toolbar">
+                    <button id="clearBtn" class="btn btn-secondary">🗑️ 清除画板</button>
+                    <button id="recognizeBtn" class="btn btn-primary">🔍 识别公式</button>
+                    <div class="brush-size">
+                        <label>笔触:</label>
+                        <input type="range" id="brushSize" min="2" max="15" value="4">
+                    </div>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="drawingCanvas" width="500" height="400"></canvas>
+                </div>
+                <div class="examples">
+                    <h3>💡 示例公式（点击加载）</h3>
+                    <div class="example-buttons">
+                        <button class="example-btn" data-latex="\frac{a}{b}">分数 a/b</button>
+                        <button class="example-btn" data-latex="\sqrt{x}">平方根 √x</button>
+                        <button class="example-btn" data-latex="x^2 + y^2 = z^2">勾股定理</button>
+                        <button class="example-btn" data-latex="\int_0^\infty e^{-x^2} dx">积分</button>
+                        <button class="example-btn" data-latex="\sum_{n=1}^\infty \frac{1}{n^2}">求和</button>
+                        <button class="example-btn" data-latex="\alpha + \beta = \gamma">希腊字母</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-section">
+                <div class="latex-output">
+                    <h3>📝 LaTeX 代码</h3>
+                    <div class="latex-code-wrapper">
+                        <code id="latexCode">点击"识别公式"或选择示例...</code>
+                        <button id="copyBtn" class="btn btn-small">📋 复制</button>
+                    </div>
+                </div>
+                <div class="rendered-output">
+                    <h3>🎯 渲染结果</h3>
+                    <div id="mathOutput" class="math-display">
+                        \[\text{公式将在这里显示}\]
+                    </div>
+                </div>
+                <div class="recognition-info">
+                    <h3>🤖 识别说明</h3>
+                    <div class="info-content">
+                        <p><strong>支持的符号：</strong></p>
+                        <ul>
+                            <li>数字: 0-9</li>
+                            <li>字母: a-z, A-Z</li>
+                            <li>运算符: +, -, ×, ÷, =</li>
+                            <li>分数: 横线分隔上下部分</li>
+                            <li>根号: √ 形符号</li>
+                        </ul>
+                        <p class="tip">💡 提示：先画整体结构，再写细节。分数先写横线，根号先写√符号。</p>
+                    </div>
+                </div>
+                <div class="debug-info">
+                    <h3>🔍 识别过程</h3>
+                    <pre id="debugOutput">识别调试信息将显示在这里...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="canvas.js"></script>
+    <script src="recognizer.js"></script>
+    <script src="renderer.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

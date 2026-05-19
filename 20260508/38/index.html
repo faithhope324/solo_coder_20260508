@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 相册</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="container"></div>
+    
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>加载中...</p>
+    </div>
+
+    <div id="modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <button class="modal-nav modal-prev">&#10094;</button>
+            <div class="modal-image-container">
+                <img id="modal-image" src="" alt="">
+            </div>
+            <button class="modal-nav modal-next">&#10095;</button>
+            <div class="modal-details">
+                <h2 id="modal-title"></h2>
+                <p id="modal-description"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="info">
+        <p>拖拽旋转 | 点击图片查看详情</p>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

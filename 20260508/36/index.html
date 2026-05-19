@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>莫比乌斯环 3D 可视化</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+        
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #controls-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+        
+        #controls-panel.collapsed {
+            width: auto;
+            max-height: none;
+            overflow: hidden;
+            padding: 10px 15px;
+        }
+        
+        #controls-panel.collapsed .panel-content {
+            display: none;
+        }
+        
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e94560;
+            padding-bottom: 10px;
+        }
+        
+        #controls-panel.collapsed .panel-header {
+            margin-bottom: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .panel-header h2 {
+            color: #16213e;
+            font-size: 1.4em;
+            margin: 0;
+        }
+        
+        #controls-panel.collapsed .panel-header h2 {
+            font-size: 1em;
+        }
+        
+        .toggle-btn {
+            background: none !important;
+            border: none !important;
+            font-size: 1.2em !important;
+            cursor: pointer !important;
+            padding: 5px 12px !important;
+            border-radius: 6px !important;
+            transition: all 0.2s !important;
+            color: #16213e !important;
+            flex: none !important;
+            min-width: auto !important;
+            margin: 0 !important;
+        }
+        
+        .toggle-btn:hover {
+            background: #f0f0f0 !important;
+            transform: scale(1.1) !important;
+            color: #e94560 !important;
+        }
+        
+        .control-group {
+            margin-bottom: 18px;
+        }
+        
+        .control-group label {
+            display: block;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #e94560;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(233, 69, 96, 0.4);
+            transition: transform 0.2s;
+        }
+        
+        .control-group input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        .value-display {
+            display: inline-block;
+            background: #16213e;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            margin-left: 8px;
+            float: right;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-weight: normal;
+            margin-bottom: 0;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #e94560;
+        }
+        
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .color-picker-wrapper input[type="color"] {
+            width: 50px;
+            height: 35px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: none;
+        }
+        
+        #info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9em;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px 18px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+        }
+        
+        #info p {
+            margin: 4px 0;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px 0;
+        }
+        
+        button {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            background: #16213e;
+            color: white;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #e94560;
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .section-title {
+            color: #e94560;
+            font-size: 1em;
+            margin: 20px 0 10px 0;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .section-title:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div id="controls-panel">
+        <div class="panel-header">
+            <h2>🎭 莫比乌斯环控制</h2>
+            <button class="toggle-btn" id="toggle-panel" title="最小化">−</button>
+        </div>
+        <div class="panel-content">
+        <div class="section-title">几何参数</div>
+        
+        <div class="control-group">
+            <label>
+                半径
+                <span id="radius-value" class="value-display">5</span>
+            </label>
+            <input type="range" id="radius" min="2" max="10" step="0.1" value="5">
+        </div>
+        
+        <div class="control-group">
+            <label>
+                宽度
+                <span id="width-value" class="value-display">2</span>
+            </label>
+            <input type="range" id="width" min="0.5" max="5" step="0.1" value="2">
+        </div>
+        
+        <div class="control-group">
+            <label>
+                扭转度
+                <span id="twist-value" class="value-display">1</span>
+            </label>
+            <input type="range" id="twist" min="0.5" max="4" step="0.1" value="1">
+        </div>
+        
+        <div class="control-group">
+            <label>
+                分段数
+                <span id="segments-value" class="value-display">100</span>
+            </label>
+            <input type="range" id="segments" min="20" max="300" step="5" value="100">
+        </div>
+        
+        <div class="control-group">
+            <label>
+                宽度分段
+                <span id="width-segments-value" class="value-display">20</span>
+            </label>
+            <input type="range" id="width-segments" min="1" max="50" step="1" value="20">
+        </div>
+        
+        <div class="section-title">显示模式</div>
+        
+        <div class="control-group">
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="wireframe" checked>
+                    线框模式
+                </label>
+                <label>
+                    <input type="checkbox" id="show-normals">
+                    显示法线
+                </label>
+                <label>
+                    <input type="checkbox" id="auto-rotate" checked>
+                    自动旋转
+                </label>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>
+                表面颜色
+            </label>
+            <div class="color-picker-wrapper">
+                <input type="color" id="surface-color" value="#e94560">
+                <span style="color: #666; font-size: 0.85em;">点击选择颜色</span>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>
+                法线长度
+                <span id="normal-length-value" class="value-display">0.3</span>
+            </label>
+            <input type="range" id="normal-length" min="0.1" max="1" step="0.05" value="0.3">
+        </div>
+        
+        <div class="section-title">动画</div>
+        
+        <div class="control-group">
+            <label>
+                旋转速度
+                <span id="rotation-speed-value" class="value-display">0.5</span>
+            </label>
+            <input type="range" id="rotation-speed" min="0" max="2" step="0.1" value="0.5">
+        </div>
+        
+        <div class="btn-group">
+            <button id="reset-btn">重置参数</button>
+        </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const panel = document.getElementById('controls-panel');
+            const toggleBtn = document.getElementById('toggle-panel');
+            
+            toggleBtn.addEventListener('click', () => {
+                panel.classList.toggle('collapsed');
+                if (panel.classList.contains('collapsed')) {
+                    toggleBtn.textContent = '+';
+                    toggleBtn.title = '展开';
+                } else {
+                    toggleBtn.textContent = '−';
+                    toggleBtn.title = '最小化';
+                }
+            });
+        });
+    </script>
+    
+    <div id="info">
+        <p>🖱️ 鼠标左键拖拽：旋转视角</p>
+        <p>🔍 鼠标滚轮：缩放</p>
+        <p>📍 顶点数: <span id="vertex-count">0</span></p>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器连接池监控</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1>数据库连接池监控中心</h1>
+            <div class="connection-status">
+                <span id="ws-status" class="status-indicator"></span>
+                <span id="ws-status-text">WebSocket 连接中...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="gauges-section">
+            <h2>整体使用率概览</h2>
+            <div id="gauges-container" class="gauges-grid"></div>
+        </section>
+
+        <section class="pools-section">
+            <h2>连接池详细状态</h2>
+            <div id="pools-container" class="pools-list"></div>
+        </section>
+    </main>
+
+    <div id="alert-container" class="alert-container"></div>
+
+    <script src="js/websocket-manager.js"></script>
+    <script src="js/gauge-card.js"></script>
+    <script src="js/alert-notification.js"></script>
+    <script src="js/pool-monitor.js"></script>
+</body>
+</html>

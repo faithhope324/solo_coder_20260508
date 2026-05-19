@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网页色彩主题提取器</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 网页色彩主题提取器</h1>
+            <p>上传图片或输入图片URL，自动提取主色调并生成CSS变量</p>
+        </header>
+
+        <main>
+            <section class="upload-section">
+                <div class="upload-options">
+                    <div class="upload-box" id="uploadBox">
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                        <div class="upload-content">
+                            <div class="upload-icon">📁</div>
+                            <p>点击或拖拽图片到此处</p>
+                            <span class="hint">支持 JPG、PNG、GIF 等格式</span>
+                        </div>
+                    </div>
+                    <div class="divider">或</div>
+                    <div class="url-input-box">
+                        <label for="urlInput">输入图片URL</label>
+                        <div class="url-input-wrapper">
+                            <input type="url" id="urlInput" placeholder="https://example.com/image.jpg">
+                            <button id="urlLoadBtn">加载</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="preview-section" id="previewSection" style="display: none;">
+                <div class="image-preview">
+                    <img id="previewImage" alt="预览图片">
+                </div>
+            </section>
+
+            <section class="palette-section" id="paletteSection" style="display: none;">
+                <h2>提取的主色调</h2>
+                <div class="palette-container" id="paletteContainer"></div>
+            </section>
+
+            <section class="css-section" id="cssSection" style="display: none;">
+                <div class="css-header">
+                    <h2>生成的CSS变量</h2>
+                    <button id="copyCssBtn" class="copy-btn">
+                        <span class="copy-icon">📋</span>
+                        复制CSS
+                    </button>
+                </div>
+                <div class="theme-preview">
+                    <div class="theme-card">
+                        <div class="theme-card-header">主题预览</div>
+                        <div class="theme-card-body" id="themePreview">
+                            <div class="theme-title">标题文字</div>
+                            <div class="theme-text">这是正文内容，展示背景色与文字色的搭配效果。</div>
+                            <button class="theme-btn">强调色按钮</button>
+                        </div>
+                    </div>
+                </div>
+                <pre class="css-code" id="cssCode"></pre>
+            </section>
+        </main>
+
+        <footer>
+            <p>使用 KMeans 聚类算法进行颜色量化</p>
+        </footer>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>康威生命游戏模拟器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>康威生命游戏</h1>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <span class="label">存活细胞:</span>
+                <span id="aliveCount" class="value">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="label">代际:</span>
+                <span id="generation" class="value">0</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn" class="btn primary">开始</button>
+            <button id="pauseBtn" class="btn" disabled>暂停</button>
+            <button id="stepBtn" class="btn">单步</button>
+            <button id="clearBtn" class="btn danger">清空</button>
+            <button id="randomBtn" class="btn">随机填充</button>
+        </div>
+
+        <div class="speed-control">
+            <label for="speedSlider">速度:</label>
+            <input type="range" id="speedSlider" min="1" max="100" value="10">
+            <span id="speedValue">100ms</span>
+        </div>
+
+        <div class="presets">
+            <label>预设图形:</label>
+            <select id="presetSelect">
+                <option value="">-- 选择预设 --</option>
+                <option value="glider">滑翔机</option>
+                <option value="blinker">闪烁器</option>
+                <option value="toad">蟾蜍</option>
+                <option value="beacon">灯塔</option>
+                <option value="pulsar">脉冲星</option>
+                <option value="gliderGun">滑翔机枪</option>
+                <option value="spaceship">宇宙飞船</option>
+                <option value="copperhead">铜头蛇</option>
+            </select>
+            <button id="placePresetBtn" class="btn small">放置</button>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="instructions">
+            <p>左键点击/拖动：绘制活细胞 | 右键点击/拖动：清除细胞</p>
+        </div>
+    </div>
+
+    <script src="js/gridManager.js"></script>
+    <script src="js/evolutionEngine.js"></script>
+    <script src="js/presetLibrary.js"></script>
+    <script src="js/animationController.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背景移除工具 - AI 抠图</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎨 AI 背景移除工具</h1>
+            <p class="subtitle">基于 MediaPipe Selfie Segmentation 的智能抠图</p>
+        </header>
+
+        <div id="modelLoading" class="loading-overlay">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <h3>正在加载 AI 模型...</h3>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <p id="progressText">准备中...</p>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <div class="upload-box" id="uploadBox">
+                    <input type="file" id="imageInput" accept="image/*" hidden>
+                    <div class="upload-icon">📷</div>
+                    <h3>上传人像照片</h3>
+                    <p>点击或拖拽图片到此处</p>
+                    <p class="hint">支持 JPG、PNG、WebP 格式</p>
+                </div>
+            </div>
+
+            <div class="controls-section" id="controlsSection" style="display: none;">
+                <div class="control-group">
+                    <h3>🎨 背景选择</h3>
+                    
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="color">纯色</button>
+                        <button class="tab-btn" data-tab="gradient">渐变</button>
+                        <button class="tab-btn" data-tab="image">图片</button>
+                        <button class="tab-btn" data-tab="transparent">透明</button>
+                    </div>
+
+                    <div class="tab-content active" id="colorTab">
+                        <div class="color-picker-wrapper">
+                            <label>选择背景色</label>
+                            <input type="color" id="bgColorPicker" value="#ffffff">
+                            <div class="preset-colors">
+                                <button class="color-preset" style="background: #ffffff" data-color="#ffffff"></button>
+                                <button class="color-preset" style="background: #000000" data-color="#000000"></button>
+                                <button class="color-preset" style="background: #3b82f6" data-color="#3b82f6"></button>
+                                <button class="color-preset" style="background: #10b981" data-color="#10b981"></button>
+                                <button class="color-preset" style="background: #f59e0b" data-color="#f59e0b"></button>
+                                <button class="color-preset" style="background: #ef4444" data-color="#ef4444"></button>
+                                <button class="color-preset" style="background: #8b5cf6" data-color="#8b5cf6"></button>
+                                <button class="color-preset" style="background: #ec4899" data-color="#ec4899"></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="gradientTab">
+                        <div class="gradient-controls">
+                            <label>渐变角度</label>
+                            <input type="range" id="gradientAngle" min="0" max="360" value="180">
+                            <span id="angleValue">180°</span>
+                            
+                            <div class="gradient-colors">
+                                <div class="gradient-color-item">
+                                    <label>起始色</label>
+                                    <input type="color" id="gradientStart" value="#667eea">
+                                </div>
+                                <div class="gradient-color-item">
+                                    <label>结束色</label>
+                                    <input type="color" id="gradientEnd" value="#764ba2">
+                                </div>
+                            </div>
+                            
+                            <div class="preset-gradients">
+                                <button class="gradient-preset" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)" data-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"></button>
+                                <button class="gradient-preset" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)" data-gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"></button>
+                                <button class="gradient-preset" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)" data-gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"></button>
+                                <button class="gradient-preset" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)" data-gradient="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"></button>
+                                <button class="gradient-preset" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%)" data-gradient="linear-gradient(135deg, #fa709a 0%, #fee140 100%)"></button>
+                                <button class="gradient-preset" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)" data-gradient="linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)"></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="imageTab">
+                        <div class="bg-image-upload">
+                            <input type="file" id="bgImageInput" accept="image/*" hidden>
+                            <button class="upload-bg-btn" id="uploadBgBtn">📁 上传背景图片</button>
+                            <div id="bgPreview" class="bg-preview" style="display: none;">
+                                <img id="bgPreviewImg" alt="背景预览">
+                                <button class="remove-bg-btn" id="removeBgBtn">×</button>
+                            </div>
+                            <div class="bg-fit-options">
+                                <label>背景适配</label>
+                                <select id="bgFitMode">
+                                    <option value="cover">覆盖</option>
+                                    <option value="contain">包含</option>
+                                    <option value="fill">拉伸</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="transparentTab">
+                        <div class="transparent-info">
+                            <p>💡 选择透明背景后，下载时请选择 PNG 格式以保留透明度</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>⚙️ 调整参数</h3>
+                    
+                    <div class="slider-group">
+                        <label>边缘平滑度</label>
+                        <input type="range" id="smoothness" min="0" max="20" value="5">
+                        <span id="smoothnessValue">5</span>
+                    </div>
+
+                    <div class="slider-group">
+                        <label>蒙版阈值</label>
+                        <input type="range" id="threshold" min="0" max="100" value="50">
+                        <span id="thresholdValue">50%</span>
+                    </div>
+
+                    <div class="slider-group">
+                        <label>前景亮度</label>
+                        <input type="range" id="brightness" min="50" max="150" value="100">
+                        <span id="brightnessValue">100%</span>
+                    </div>
+
+                    <div class="slider-group">
+                        <label>前景对比度</label>
+                        <input type="range" id="contrast" min="50" max="150" value="100">
+                        <span id="contrastValue">100%</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>📥 下载设置</h3>
+                    <div class="download-options">
+                        <div class="option-item">
+                            <label>格式</label>
+                            <select id="downloadFormat">
+                                <option value="png">PNG (推荐)</option>
+                                <option value="jpeg">JPEG</option>
+                                <option value="webp">WebP</option>
+                            </select>
+                        </div>
+                        <div class="option-item">
+                            <label>质量</label>
+                            <input type="range" id="downloadQuality" min="10" max="100" value="90">
+                            <span id="qualityValue">90%</span>
+                        </div>
+                    </div>
+                    <button class="download-btn" id="downloadBtn">⬇️ 下载图片</button>
+                    <button class="reset-btn" id="resetBtn">🔄 重新上传</button>
+                </div>
+            </div>
+
+            <div class="preview-section" id="previewSection" style="display: none;">
+                <div class="preview-header">
+                    <h3>👁️ 预览</h3>
+                    <div class="view-toggle">
+                        <button class="view-btn active" data-view="result">结果</button>
+                        <button class="view-btn" data-view="original">原图</button>
+                        <button class="view-btn" data-view="mask">蒙版</button>
+                        <button class="view-btn" data-view="sidebyside">对比</button>
+                    </div>
+                </div>
+                <div class="preview-container">
+                    <canvas id="previewCanvas"></canvas>
+                    <div class="side-by-side-container" id="sideBySideContainer" style="display: none;">
+                        <div class="side-item">
+                            <span class="side-label">原图</span>
+                            <canvas id="originalCanvas"></canvas>
+                        </div>
+                        <div class="side-item">
+                            <span class="side-label">结果</span>
+                            <canvas id="resultCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="processing-status" id="processingStatus"></div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>Powered by MediaPipe Selfie Segmentation | 纯前端处理，图片不上传服务器</p>
+        </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

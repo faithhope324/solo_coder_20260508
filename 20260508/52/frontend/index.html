@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>粒子对撞模拟系统</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="container">
+        <div id="sidebar">
+            <h1>⚛️ 粒子对撞模拟</h1>
+            
+            <h2>对撞参数</h2>
+            
+            <div class="control-group">
+                <label for="collision-type">粒子类型</label>
+                <select id="collision-type">
+                    <option value="e+e-">电子-正电子 (e⁺e⁻)</option>
+                    <option value="pp">质子-质子 (pp)</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="process">物理过程</label>
+                <select id="process">
+                    <option value="generic">通用过程</option>
+                    <option value="higgs">Higgs 玻色子产生</option>
+                    <option value="z">Z 玻色子产生</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>
+                    对撞能量
+                    <span id="energy-value" class="value-display">91 GeV</span>
+                </label>
+                <input type="range" id="energy" min="10" max="1000" value="91" step="1">
+            </div>
+            
+            <div class="control-group">
+                <label>
+                    径迹长度
+                    <span id="track-length-value" class="value-display">1.0</span>
+                </label>
+                <input type="range" id="track-length" min="0.1" max="3" value="1" step="0.1">
+            </div>
+            
+            <div class="control-group">
+                <label>
+                    磁场强度
+                    <span id="magnetic-field-value" class="value-display">2.0 T</span>
+                </label>
+                <input type="range" id="magnetic-field" min="0" max="10" value="2" step="0.5">
+            </div>
+            
+            <button id="simulate-btn">开始对撞</button>
+            <button id="clear-btn">清除场景</button>
+            
+            <h2>粒子筛选</h2>
+            <div id="filter-container">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="filter-charged" checked>
+                    <label for="filter-charged">显示带电粒子</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="filter-neutral" checked>
+                    <label for="filter-neutral">显示中性粒子</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="filter-electron" checked>
+                    <label for="filter-electron">电子/正电子</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="filter-muon" checked>
+                    <label for="filter-muon">μ子</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="filter-photon" checked>
+                    <label for="filter-photon">光子</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="filter-hadron" checked>
+                    <label for="filter-hadron">强子</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="filter-higgs" checked>
+                    <label for="filter-higgs">Higgs/Z/W 玻色子</label>
+                </div>
+            </div>
+            
+            <h2>粒子信息</h2>
+            <div id="info-panel">
+                <p style="color: #888; text-align: center;">点击"开始对撞"生成事件</p>
+            </div>
+            
+            <h2>衰变链</h2>
+            <div id="decay-chain">
+                <p style="color: #888; text-align: center;">选择一个粒子查看衰变链</p>
+            </div>
+        </div>
+        
+        <div id="main">
+            <div id="canvas-container"></div>
+            
+            <div id="stats">
+                <div><strong>事件信息</strong></div>
+                <div>对撞类型: <span id="stat-collision">-</span></div>
+                <div>质心能量: <span id="stat-energy">-</span></div>
+                <div>物理过程: <span id="stat-process">-</span></div>
+                <div>粒子总数: <span id="stat-n-all">-</span></div>
+                <div>稳定粒子: <span id="stat-n-stable">-</span></div>
+            </div>
+            
+            <div id="legend">
+                <div><strong>粒子图例</strong></div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6b6b;"></div>
+                    <span>电子/正电子</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffd93d;"></div>
+                    <span>μ子</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #48dbfb;"></div>
+                    <span>π介子</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #1dd1a1;"></div>
+                    <span>K介子</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #feca57;"></div>
+                    <span>光子</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #a29bfe;"></div>
+                    <span>Higgs 玻色子</span>
+                </div>
+            </div>
+            
+            <div id="loading">
+                <div class="spinner"></div>
+                <p>正在模拟对撞...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="static/js/main.js"></script>
+</body>
+</html>

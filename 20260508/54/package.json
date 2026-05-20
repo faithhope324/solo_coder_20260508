@@ -1,0 +1,17 @@
+{
+  "name": "cloud-cost-optimization",
+  "private": true,
+  "version": "1.0.0",
+  "description": "云成本优化分析系统",
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && node server.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && node server.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

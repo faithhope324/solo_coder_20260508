@@ -1,0 +1,165 @@
+{
+  "behavior_log": [
+    {
+      "user_id": "user_002",
+      "news_id": 40,
+      "action": "click",
+      "timestamp": "2026-05-20T06:12:16.828126",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 18,
+      "action": "click",
+      "timestamp": "2026-05-20T11:28:26.807052",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 33,
+      "action": "dislike",
+      "timestamp": "2026-05-20T11:28:51.516104",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 47,
+      "action": "click",
+      "timestamp": "2026-05-20T11:28:58.962445",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 22,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:06.964259",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 45,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:08.655019",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 19,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:10.971033",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 41,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:13.608244",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 44,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:15.654464",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 23,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:17.491137",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 43,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:19.143728",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 39,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:25.606745",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 34,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:26.810186",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 17,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:28.276907",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 37,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:35.838923",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 35,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:36.863155",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 38,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:37.971386",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 60,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:39.654791",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 57,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:40.756767",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 61,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:42.022284",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 62,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:43.159083",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 58,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:44.255268",
+      "duration": 0
+    },
+    {
+      "user_id": "user_001",
+      "news_id": 46,
+      "action": "click",
+      "timestamp": "2026-05-20T11:29:54.393580",
+      "duration": 0
+    }
+  ]
+}

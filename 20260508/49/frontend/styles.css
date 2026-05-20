@@ -1,0 +1,589 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+    padding: 40px 0;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+main {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+section {
+    margin-bottom: 30px;
+}
+
+h2 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.input-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+.tab-btn:hover:not(.active) {
+    background: #f0f0ff;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.upload-area {
+    border: 3px dashed #667eea;
+    border-radius: 15px;
+    padding: 60px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f8f9ff;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    border-color: #764ba2;
+    background: #f0f0ff;
+}
+
+.upload-content svg {
+    width: 60px;
+    height: 60px;
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+.upload-content p {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.hint {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.file-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f0f0ff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+.btn-remove {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-remove:hover {
+    background: #ff5252;
+}
+
+.record-area {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.record-btn {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 20px 40px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+}
+
+.record-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+}
+
+.record-btn.recording {
+    background: #4CAF50;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+.record-icon {
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+}
+
+.record-btn.recording .record-icon {
+    border-radius: 2px;
+}
+
+#recording-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.recording-indicator {
+    width: 12px;
+    height: 12px;
+    background: #ff6b6b;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+#recording-time {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.record-hint {
+    margin-top: 15px;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.settings {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9ff;
+    border-radius: 10px;
+}
+
+.settings label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #555;
+}
+
+.settings input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 80px;
+    font-size: 1rem;
+}
+
+.hint-small {
+    font-size: 0.8rem;
+    color: #888;
+    margin-left: 10px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.progress-container {
+    background: #f8f9ff;
+    padding: 25px;
+    border-radius: 10px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.tracks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.track-card {
+    background: #f8f9ff;
+    border-radius: 15px;
+    padding: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.track-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.track-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    text-transform: uppercase;
+}
+
+.track-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.track-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.track-btn.play {
+    background: #667eea;
+    color: white;
+}
+
+.track-btn.play:hover {
+    background: #5568d3;
+}
+
+.track-btn.mute {
+    background: #ffc107;
+    color: #333;
+}
+
+.track-btn.mute:hover {
+    background: #e0a800;
+}
+
+.track-btn.mute.active {
+    background: #6c757d;
+    color: white;
+}
+
+.track-btn.download {
+    background: #28a745;
+    color: white;
+}
+
+.track-btn.download:hover {
+    background: #218838;
+}
+
+.waveform-container {
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.track-volume {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.track-volume label {
+    font-size: 0.9rem;
+    color: #666;
+    min-width: 50px;
+}
+
+.track-volume input[type="range"] {
+    flex: 1;
+    height: 5px;
+    border-radius: 5px;
+    background: #ddd;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.track-volume input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+}
+
+.global-controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.btn-secondary {
+    padding: 12px 24px;
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: #667eea;
+    color: white;
+}
+
+.btn-danger {
+    flex: 1;
+    padding: 15px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+}
+
+.btn-danger:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+}
+
+.btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.history-container {
+    padding: 20px 0;
+}
+
+.history-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9ff;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border-left: 4px solid #667eea;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.history-item:hover {
+    background: #f0f0ff;
+    transform: translateX(5px);
+}
+
+.history-info {
+    flex: 1;
+}
+
+.history-filename {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.history-meta {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.history-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.history-status.completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.history-status.failed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.history-status.processing {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.history-status.cancelled {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.history-status.interrupted {
+    background: #ffeeba;
+    color: #856404;
+}
+
+.history-status.uploaded {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.empty-history {
+    text-align: center;
+    color: #888;
+    padding: 40px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+footer {
+    text-align: center;
+    color: white;
+    padding: 20px;
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    main {
+        padding: 20px;
+    }
+
+    .input-tabs {
+        flex-direction: column;
+    }
+
+    .global-controls {
+        flex-direction: column;
+    }
+
+    .btn-secondary {
+        width: 100%;
+    }
+}

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频目标跟踪与计数系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 视频目标跟踪与计数系统</h1>
+            <p class="subtitle">基于 YOLO + DeepSORT 的实时目标检测、跟踪与计数平台</p>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="card">
+                    <h2>📤 视频上传</h2>
+                    <div class="upload-section">
+                        <div class="upload-area" id="uploadArea">
+                            <input type="file" id="videoFile" accept="video/*" hidden>
+                            <div class="upload-icon">📁</div>
+                            <p>点击或拖拽视频文件到此处</p>
+                            <p class="upload-hint">支持 MP4, AVI, MOV, MKV, WebM</p>
+                        </div>
+                        <button class="btn btn-primary" id="uploadBtn" disabled>开始上传</button>
+                    </div>
+                    
+                    <div class="task-info" id="taskInfo" style="display: none;">
+                        <h3>任务信息</h3>
+                        <p><strong>任务ID:</strong> <span id="taskId">-</span></p>
+                        <p><strong>文件名:</strong> <span id="fileName">-</span></p>
+                        <p><strong>状态:</strong> <span id="taskStatus">-</span></p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>⚙️ 检测配置</h2>
+                    <div class="form-group">
+                        <label>目标类别</label>
+                        <div class="checkbox-group" id="targetClasses">
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="person" checked>
+                                <span>👤 行人</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="car" checked>
+                                <span>🚗 小汽车</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="truck" checked>
+                                <span>🚚 卡车</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="bicycle" checked>
+                                <span>🚲 自行车</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="motorcycle" checked>
+                                <span>🏍️ 摩托车</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="bus" checked>
+                                <span>🚌 公交车</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confidenceThreshold">置信度阈值: <span id="confidenceValue">0.5</span></label>
+                        <input type="range" id="confidenceThreshold" min="0.1" max="0.9" step="0.1" value="0.5">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="frameInterval">帧间隔: <span id="frameIntervalValue">1</span></label>
+                        <input type="range" id="frameInterval" min="1" max="10" step="1" value="1">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>📏 计数线设置</h2>
+                    <p class="hint">在视频上点击两点设置计数线</p>
+                    <div class="line-controls">
+                        <div class="form-group">
+                            <label>起点 (归一化坐标)</label>
+                            <div class="coord-input">
+                                <input type="number" id="lineStartX" step="0.01" min="0" max="1" value="0.5">
+                                <input type="number" id="lineStartY" step="0.01" min="0" max="1" value="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>终点 (归一化坐标)</label>
+                            <div class="coord-input">
+                                <input type="number" id="lineEndX" step="0.01" min="0" max="1" value="0.5">
+                                <input type="number" id="lineEndY" step="0.01" min="0" max="1" value="1">
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" id="applyLineBtn">应用计数线</button>
+                        <button class="btn btn-secondary" id="resetLineBtn">重置</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>▶️ 开始处理</h2>
+                    <button class="btn btn-success" id="processBtn" disabled>开始处理视频</button>
+                    <button class="btn btn-secondary" id="downloadCsvBtn" disabled>导出 CSV</button>
+                    <button class="btn btn-danger" id="resetAllBtn">🔄 重置所有</button>
+                    <div class="progress-container" id="progressContainer" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p class="progress-text" id="progressText">0%</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="card video-container-card">
+                    <h2>🎬 视频预览</h2>
+                    <div class="video-wrapper">
+                        <video id="videoPlayer" controls style="display: none;"></video>
+                        <canvas id="overlayCanvas"></canvas>
+                        <canvas id="lineCanvas"></canvas>
+                        <div class="video-placeholder" id="videoPlaceholder">
+                            <p>请先上传视频</p>
+                        </div>
+                    </div>
+                    
+                    <div class="video-controls">
+                        <div class="frame-control">
+                            <label>逐帧预览</label>
+                            <button class="btn btn-small" id="prevFrameBtn">◀ 上一帧</button>
+                            <span id="frameInfo">帧: 0 / 0</span>
+                            <button class="btn btn-small" id="nextFrameBtn">下一帧 ▶</button>
+                            <button class="btn btn-small" id="playPauseBtn">⏯ 播放/暂停</button>
+                        </div>
+                        <div class="frame-slider-container">
+                            <input type="range" id="frameSlider" min="0" max="100" value="0" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="card stats-card">
+                        <h3>📊 实时计数</h3>
+                        <div class="counts-display" id="countsDisplay">
+                            <div class="count-item total">
+                                <span class="count-label">总计</span>
+                                <div class="count-values">
+                                    <span class="in-count">进: 0</span>
+                                    <span class="out-count">出: 0</span>
+                                    <span class="total-count">总: 0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card stats-card">
+                        <h3>📈 统计信息</h3>
+                        <div class="stats-info">
+                            <p><strong>视频时长:</strong> <span id="videoDuration">-</span></p>
+                            <p><strong>总帧数:</strong> <span id="totalFrames">-</span></p>
+                            <p><strong>帧率:</strong> <span id="videoFps">-</span></p>
+                            <p><strong>跟踪目标数:</strong> <span id="totalTracks">-</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>🎯 图例</h2>
+                    <div class="legend" id="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FF6B6B;"></div>
+                            <span>行人 (person)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #4ECDC4;"></div>
+                            <span>小汽车 (car)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #45B7D1;"></div>
+                            <span>卡车 (truck)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #96CEB4;"></div>
+                            <span>自行车 (bicycle)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FFEAA7;"></div>
+                            <span>摩托车 (motorcycle)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #DDA0DD;"></div>
+                            <span>公交车 (bus)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

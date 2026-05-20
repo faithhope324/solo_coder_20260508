@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据管道血缘关系系统</title>
+    <script src="https://gw.alipayobjects.com/os/lib/antv/g6/4.8.24/dist/g6.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+        .sidebar {
+            width: 300px;
+            background: #fff;
+            border-right: 1px solid #e8e8e8;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+        }
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .sidebar-header h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .search-section {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .search-box input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+        .search-clear-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .search-clear-btn:hover {
+            background: #f0f0f0;
+            color: #666;
+        }
+        .search-clear-btn.visible {
+            display: flex;
+        }
+        .search-results {
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .search-item {
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .search-item:hover {
+            background: #f5f5f5;
+        }
+        .search-item .type-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-right: 8px;
+            color: white;
+        }
+        .type-table { background: #52c41a; }
+        .type-pipeline { background: #1890ff; }
+        .toolbar {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .toolbar button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .btn-danger {
+            background: #ff4d4f;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #e4393c;
+        }
+        .node-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        .node-list h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .node-item {
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .node-item:hover {
+            background: #f5f5f5;
+        }
+        .node-item.active {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .top-bar {
+            height: 60px;
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 15px;
+        }
+        .top-bar h2 {
+            font-size: 16px;
+            color: #333;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-left: auto;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px 15px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+        .stat-item .num {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-item .label {
+            font-size: 11px;
+            color: #999;
+        }
+        #graph-container {
+            flex: 1;
+            background: #fafafa;
+            position: relative;
+        }
+        #graph-container canvas {
+            cursor: grab;
+        }
+        #graph-container canvas:active {
+            cursor: grabbing;
+        }
+        .detail-panel {
+            position: absolute;
+            right: 0;
+            top: 60px;
+            bottom: 0;
+            width: 400px;
+            background: #fff;
+            border-left: 1px solid #e8e8e8;
+            box-shadow: -4px 0 12px rgba(0,0,0,0.08);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .detail-panel.open {
+            transform: translateX(0);
+        }
+        .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 10;
+        }
+        .panel-header .close-btn {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            border: none;
+            background: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+        }
+        .panel-header .close-btn:hover {
+            color: #333;
+        }
+        .panel-header h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .panel-header .type-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: white;
+        }
+        .panel-content {
+            padding: 20px;
+        }
+        .info-section {
+            margin-bottom: 25px;
+        }
+        .info-section h4 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #667eea;
+            display: inline-block;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        .info-row .label {
+            width: 100px;
+            color: #999;
+            flex-shrink: 0;
+        }
+        .info-row .value {
+            color: #333;
+            flex: 1;
+        }
+        .schema-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .schema-table th,
+        .schema-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .schema-table th {
+            background: #fafafa;
+            color: #666;
+            font-weight: 500;
+        }
+        .quality-card {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+        .quality-card .quality-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .quality-card .quality-name {
+            font-weight: 500;
+            font-size: 13px;
+        }
+        .quality-card .quality-score {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .quality-card .score-pass { color: #52c41a; }
+        .quality-card .score-fail { color: #ff4d4f; }
+        .quality-card .quality-details {
+            font-size: 12px;
+            color: #999;
+        }
+        .score-bar {
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s;
+        }
+        .score-bar-fill.pass { background: linear-gradient(90deg, #52c41a, #73d13d); }
+        .score-bar-fill.fail { background: linear-gradient(90deg, #ff4d4f, #ff7875); }
+        .impact-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #fff7e6;
+            color: #d48806;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .impact-list {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        .impact-list li {
+            font-size: 13px;
+            margin-bottom: 6px;
+            color: #666;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            color: #999;
+        }
+        .graph-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 50;
+        }
+        .graph-controls button {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 6px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        .graph-controls button:hover {
+            background: #f0f0f0;
+            transform: scale(1.1);
+        }
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 50;
+        }
+        .legend h4 {
+            font-size: 13px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: #666;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>🔗 数据血缘系统</h1>
+                <p>Data Lineage Management</p>
+            </div>
+            <div class="search-section">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜索表或ETL任务...">
+                    <button class="search-clear-btn" id="searchClearBtn" onclick="clearSearch()" title="清除">×</button>
+                </div>
+                <div class="search-results" id="searchResults"></div>
+            </div>
+            <div class="toolbar">
+                <button class="btn-primary" onclick="showFullGraph()">
+                    <span>🌐</span> 查看全量血缘
+                </button>
+                <button class="btn-secondary" onclick="analyzeImpact()">
+                    <span>⚠️</span> 影响分析
+                </button>
+                <button class="btn-secondary" onclick="clearSelection()">
+                    <span>🔄</span> 清除选择
+                </button>
+            </div>
+            <div class="node-list">
+                <h3>数据表列表</h3>
+                <div id="tableList"></div>
+                <h3 style="margin-top: 20px;">ETL任务列表</h3>
+                <div id="pipelineList"></div>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="top-bar">
+                <h2 id="currentView">血缘关系图</h2>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="num" id="nodeCount">0</span>
+                        <span class="label">节点数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="num" id="edgeCount">0</span>
+                        <span class="label">关系数</span>
+                    </div>
+                </div>
+            </div>
+            <div id="graph-container">
+                <div class="loading" id="loading">加载中...</div>
+            </div>
+            <div class="graph-controls">
+                <button onclick="zoomIn()" title="放大">+</button>
+                <button onclick="zoomOut()" title="缩小">−</button>
+                <button onclick="fitView()" title="适配画布">⤢</button>
+            </div>
+            <div class="legend">
+                <h4>图例</h4>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #52c41a;"></div>
+                    <span>数据表 (Table)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #1890ff;"></div>
+                    <span>ETL任务 (Pipeline)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #ff4d4f;"></div>
+                    <span>受影响节点</span>
+                </div>
+            </div>
+            <div class="detail-panel" id="detailPanel">
+                <div class="panel-header">
+                    <button class="close-btn" onclick="closePanel()">×</button>
+                    <h3 id="panelTitle">节点详情</h3>
+                    <span class="type-tag" id="panelTypeTag" style="background: #52c41a;">数据表</span>
+                </div>
+                <div class="panel-content" id="panelContent">
+                    <div class="loading">请选择一个节点查看详情</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let graph = null;
+        let currentData = { nodes: [], edges: [] };
+        let selectedNodeId = null;
+        let impactNodeIds = new Set();
+
+        function initGraph() {
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            graph = new G6.Graph({
+                container: 'graph-container',
+                width,
+                height,
+                modes: {
+                    default: ['drag-canvas', 'zoom-canvas', 'drag-node', 'click-select']
+                },
+                defaultNode: {
+                    size: [180, 60],
+                    type: 'rect',
+                    style: {
+                        radius: 8,
+                        lineWidth: 2,
+                        stroke: '#fff'
+                    },
+                    labelCfg: {
+                        style: {
+                            fill: '#fff',
+                            fontSize: 12
+                        }
+                    }
+                },
+                defaultEdge: {
+                    type: 'cubic-horizontal',
+                    style: {
+                        stroke: '#91d5ff',
+                        lineWidth: 2,
+                        endArrow: {
+                            path: G6.Arrow.triangle(8, 10, 0),
+                            fill: '#91d5ff'
+                        }
+                    }
+                },
+                layout: {
+                    type: 'dagre',
+                    rankdir: 'LR',
+                    align: 'UL',
+                    controlPoints: true,
+                    nodesep: 50,
+                    ranksep: 80
+                },
+                nodeStateStyles: {
+                    selected: {
+                        lineWidth: 3,
+                        stroke: '#ff4d4f',
+                        shadowBlur: 10,
+                        shadowColor: 'rgba(255, 77, 79, 0.5)'
+                    },
+                    highlight: {
+                        lineWidth: 3,
+                        stroke: '#ffec3d'
+                    }
+                }
+            });
+
+            graph.on('node:click', (evt) => {
+                const node = evt.item;
+                const model = node.getModel();
+                selectedNodeId = model.id;
+                showNodeDetail(model);
+                highlightSubgraph(model.id);
+            });
+
+            graph.on('canvas:click', () => {
+                clearSelection();
+            });
+
+            window.addEventListener('resize', () => {
+                if (graph) {
+                    const width = container.clientWidth;
+                    const height = container.clientHeight;
+                    graph.changeSize(width, height);
+                }
+            });
+        }
+
+        async function fetchData(url) {
+            try {
+                const response = await fetch(url);
+                return await response.json();
+            } catch (error) {
+                console.error('请求失败:', error);
+                return null;
+            }
+        }
+
+        function transformData(data) {
+            const nodes = data.nodes.map(node => {
+                let color, label;
+                if (node.type === 'table') {
+                    color = '#52c41a';
+                    label = node.name.length > 15 ? node.name.slice(0, 15) + '...' : node.name;
+                } else {
+                    color = '#1890ff';
+                    label = node.name.length > 15 ? node.name.slice(0, 15) + '...' : node.name;
+                }
+                return {
+                    ...node,
+                    label,
+                    style: {
+                        fill: color
+                    }
+                };
+            });
+            return { nodes, edges: data.edges };
+        }
+
+        function renderGraph(data) {
+            document.getElementById('loading').style.display = 'none';
+            currentData = data;
+            const transformed = transformData(data);
+            graph.data(transformed);
+            graph.render();
+            graph.fitView(20);
+            
+            document.getElementById('nodeCount').textContent = data.nodes.length;
+            document.getElementById('edgeCount').textContent = data.edges.length;
+        }
+
+        async function showFullGraph() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('currentView').textContent = '全量血缘关系图';
+            const data = await fetchData(`${API_BASE}/lineage/full`);
+            if (data) {
+                renderGraph(data);
+            }
+            impactNodeIds.clear();
+        }
+
+        async function showNodeDetail(node) {
+            const panel = document.getElementById('detailPanel');
+            panel.classList.add('open');
+
+            document.getElementById('panelTitle').textContent = node.name;
+            const typeTag = document.getElementById('panelTypeTag');
+            if (node.type === 'table') {
+                typeTag.textContent = '数据表';
+                typeTag.style.background = '#52c41a';
+                const detail = await fetchData(`${API_BASE}/table/${node.id.split('_')[1]}`);
+                if (detail) {
+                    renderTableDetail(detail);
+                }
+            } else {
+                typeTag.textContent = 'ETL任务';
+                typeTag.style.background = '#1890ff';
+                const detail = await fetchData(`${API_BASE}/pipeline/${node.id.split('_')[1]}`);
+                if (detail) {
+                    renderPipelineDetail(detail);
+                }
+            }
+        }
+
+        function renderTableDetail(detail) {
+            const content = document.getElementById('panelContent');
+            
+            const avgScore = detail.quality_checks.length > 0
+                ? Math.round(detail.quality_checks.reduce((sum, qc) => sum + qc.score, 0) / detail.quality_checks.length * 10) / 10
+                : 0;
+
+            let html = `
+                <div class="info-section">
+                    <h4>基本信息</h4>
+                    <div class="info-row">
+                        <span class="label">表名</span>
+                        <span class="value">${detail.name}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">数据库</span>
+                        <span class="value">${detail.database}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">描述</span>
+                        <span class="value">${detail.description}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">平均质量分</span>
+                        <span class="value" style="color: ${avgScore >= 90 ? '#52c41a' : '#ff4d4f'}; font-weight: bold;">${avgScore}</span>
+                    </div>
+                </div>
+                <div class="info-section">
+                    <h4>表结构 (${detail.columns.length} 字段)</h4>
+                    <table class="schema-table">
+                        <thead>
+                            <tr>
+                                <th>字段名</th>
+                                <th>类型</th>
+                                <th>非空</th>
+                                <th>描述</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${detail.columns.map(col => `
+                                <tr>
+                                    <td>${col.name}</td>
+                                    <td><code style="background: #f5f5f5; padding: 2px 4px; border-radius: 3px; font-size: 11px;">${col.data_type}</code></td>
+                                    <td>${col.is_nullable === 'NO' ? '✅' : '○'}</td>
+                                    <td>${col.description || '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="info-section">
+                    <h4>数据质量检查</h4>
+                    ${detail.quality_checks.map(qc => `
+                        <div class="quality-card">
+                            <div class="quality-header">
+                                <span class="quality-name">${qc.check_type} - ${qc.check_name}</span>
+                                <span class="quality-score ${qc.result === 'PASS' ? 'score-pass' : 'score-fail'}">${qc.score}%</span>
+                            </div>
+                            <div class="score-bar">
+                                <div class="score-bar-fill ${qc.result === 'PASS' ? 'pass' : 'fail'}" style="width: ${qc.score}%;"></div>
+                            </div>
+                            <div class="quality-details">${qc.details}</div>
+                            <div class="quality-details">
+                                检查时间: ${new Date(qc.checked_at).toLocaleString()}
+                                <span style="margin-left: 8px; color: #667eea;">(${formatTimeAgo(qc.checked_at)})</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            content.innerHTML = html;
+        }
+
+        function getStatusDisplay(status) {
+            const statusMap = {
+                'running': { icon: '🔄', text: '运行中', color: '#1890ff' },
+                'success': { icon: '✅', text: '成功', color: '#52c41a' },
+                'failed': { icon: '❌', text: '失败', color: '#ff4d4f' },
+                'paused': { icon: '⏸️', text: '已暂停', color: '#faad14' },
+                'active': { icon: '🟢', text: '运行中', color: '#52c41a' },
+                'stopped': { icon: '⚪', text: '已停止', color: '#999' }
+            };
+            return statusMap[status] || { icon: '⚪', text: status, color: '#999' };
+        }
+
+        function formatTimeAgo(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) return '刚刚';
+            if (diffMins < 60) return `${diffMins} 分钟前`;
+            if (diffHours < 24) return `${diffHours} 小时前`;
+            if (diffDays < 7) return `${diffDays} 天前`;
+            return date.toLocaleString();
+        }
+
+        function renderPipelineDetail(detail) {
+            const content = document.getElementById('panelContent');
+            const statusDisplay = getStatusDisplay(detail.status);
+            const html = `
+                <div class="info-section">
+                    <h4>基本信息</h4>
+                    <div class="info-row">
+                        <span class="label">任务名</span>
+                        <span class="value">${detail.name}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">任务类型</span>
+                        <span class="value">${detail.task_type}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">状态</span>
+                        <span class="value" style="color: ${statusDisplay.color};">
+                            ${statusDisplay.icon} ${statusDisplay.text}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">描述</span>
+                        <span class="value">${detail.description}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">上次运行</span>
+                        <span class="value">
+                            ${detail.last_run ? `
+                                <div>${new Date(detail.last_run).toLocaleString()}</div>
+                                <div style="color: #999; font-size: 12px; margin-top: 2px;">
+                                    (${formatTimeAgo(detail.last_run)})
+                                </div>
+                            ` : '-'}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">创建时间</span>
+                        <span class="value">${detail.created_at ? new Date(detail.created_at).toLocaleString() : '-'}</span>
+                    </div>
+                </div>
+            `;
+            content.innerHTML = html;
+        }
+
+        function closePanel() {
+            document.getElementById('detailPanel').classList.remove('open');
+        }
+
+        async function loadSidebarData() {
+            const tables = await fetchData(`${API_BASE}/tables`);
+            const pipelines = await fetchData(`${API_BASE}/pipelines`);
+
+            if (tables) {
+                const tableList = document.getElementById('tableList');
+                tableList.innerHTML = tables.map(t => `
+                    <div class="node-item" onclick="locateNode('table_${t.id}')">
+                        <span style="color: #52c41a;">📊</span>
+                        <span>${t.name}</span>
+                    </div>
+                `).join('');
+            }
+
+            if (pipelines) {
+                const pipelineList = document.getElementById('pipelineList');
+                pipelineList.innerHTML = pipelines.map(p => `
+                    <div class="node-item" onclick="locateNode('pipeline_${p.id}')">
+                        <span style="color: #1890ff;">⚙️</span>
+                        <span>${p.name}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function search() {
+            const keyword = document.getElementById('searchInput').value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+            const clearBtn = document.getElementById('searchClearBtn');
+            
+            if (!keyword) {
+                resultsDiv.innerHTML = '';
+                clearBtn.classList.remove('visible');
+                return;
+            }
+
+            clearBtn.classList.add('visible');
+
+            const data = await fetchData(`${API_BASE}/search?keyword=${encodeURIComponent(keyword)}`);
+            if (data && data.results) {
+                resultsDiv.innerHTML = data.results.map(item => `
+                    <div class="search-item" onclick="locateNode('${item.id}'); clearSearch();">
+                        <span class="type-badge ${item.type === 'table' ? 'type-table' : 'type-pipeline'}">
+                            ${item.type === 'table' ? '表' : '任务'}
+                        </span>
+                        ${item.name}
+                    </div>
+                `).join('');
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('searchClearBtn').classList.remove('visible');
+        }
+
+        function locateNode(nodeId) {
+            const node = graph.findById(nodeId);
+            if (node) {
+                graph.setItemState(nodeId, 'selected', true);
+                const model = node.getModel();
+                showNodeDetail(model);
+                graph.focusItem(nodeId, true, {
+                    easing: 'easeCubic',
+                    duration: 500
+                });
+                highlightSubgraph(nodeId);
+            }
+        }
+
+        function highlightSubgraph(nodeId) {
+            graph.getNodes().forEach(n => graph.clearItemStates(n));
+            graph.getEdges().forEach(e => graph.clearItemStates(e));
+            
+            graph.setItemState(nodeId, 'selected', true);
+            
+            const neighbors = new Set([nodeId]);
+            graph.getEdges().forEach(edge => {
+                const model = edge.getModel();
+                if (model.source === nodeId || model.target === nodeId) {
+                    neighbors.add(model.source);
+                    neighbors.add(model.target);
+                    graph.setItemState(edge, 'highlight', true);
+                }
+            });
+            
+            neighbors.forEach(nid => {
+                if (nid !== nodeId) {
+                    graph.setItemState(nid, 'highlight', true);
+                }
+            });
+        }
+
+        async function analyzeImpact() {
+            if (!selectedNodeId) {
+                alert('请先选择一个节点');
+                return;
+            }
+
+            const data = await fetchData(`${API_BASE}/impact/${selectedNodeId}`);
+            if (data) {
+                impactNodeIds = new Set(data.all_impacted_ids);
+                
+                graph.getNodes().forEach(n => {
+                    const model = n.getModel();
+                    if (impactNodeIds.has(model.id)) {
+                        graph.setItemState(model.id, 'selected', true);
+                    }
+                });
+
+                const panel = document.getElementById('detailPanel');
+                panel.classList.add('open');
+                document.getElementById('panelTitle').textContent = '影响分析结果';
+                const typeTag = document.getElementById('panelTypeTag');
+                typeTag.textContent = `影响 ${data.impacted_count} 个节点`;
+                typeTag.style.background = '#fa8c16';
+
+                const content = document.getElementById('panelContent');
+                content.innerHTML = `
+                    <div class="info-section">
+                        <h4>分析结果</h4>
+                        <p style="margin-bottom: 15px; font-size: 14px;">
+                            修改当前节点将影响 <strong style="color: #ff4d4f; font-size: 18px;">${data.impacted_count}</strong> 个下游节点
+                        </p>
+                        <h4 style="margin-top: 20px;">受影响节点列表</h4>
+                        <ul class="impact-list">
+                            ${data.impacted_nodes.map(node => `
+                                <li onclick="locateNode('${node.id}')" style="cursor: pointer;">
+                                    <span style="color: ${node.type === 'table' ? '#52c41a' : '#1890ff'};">
+                                        ${node.type === 'table' ? '📊' : '⚙️'}
+                                    </span>
+                                    <strong>${node.name}</strong>
+                                    <span style="color: #999; font-size: 12px;">- ${node.description}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+
+        function clearSelection() {
+            if (graph) {
+                graph.getNodes().forEach(n => graph.clearItemStates(n));
+                graph.getEdges().forEach(e => graph.clearItemStates(e));
+            }
+            selectedNodeId = null;
+            impactNodeIds.clear();
+            closePanel();
+        }
+
+        function zoomIn() {
+            if (graph) graph.zoom(0.1);
+        }
+
+        function zoomOut() {
+            if (graph) graph.zoom(-0.1);
+        }
+
+        function fitView() {
+            if (graph) graph.fitView(20);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', search);
+
+        window.onload = async () => {
+            initGraph();
+            await showFullGraph();
+            await loadSidebarData();
+        };
+    </script>
+</body>
+</html>

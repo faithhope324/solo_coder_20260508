@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻推荐系统可解释性面板</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📰 新闻推荐系统可解释性面板</h1>
+            <p class="subtitle">智能推荐 · 透明解释 · 实时反馈</p>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="user-section">
+                    <h3>👤 用户选择</h3>
+                    <select id="userSelect" class="user-select">
+                        <option value="user_001">用户 A</option>
+                        <option value="user_002">用户 B</option>
+                        <option value="user_003">用户 C</option>
+                        <option value="user_004">用户 D</option>
+                        <option value="user_005">用户 E</option>
+                    </select>
+                </div>
+
+                <div class="profile-section">
+                    <h3>📊 用户画像</h3>
+                    <div id="userProfile" class="profile-content">
+                        <p class="loading">加载中...</p>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <h3>📈 行为统计</h3>
+                    <div id="userStats" class="stats-content">
+                        <p class="loading">加载中...</p>
+                    </div>
+                </div>
+
+                <div class="actions-section">
+                    <button id="clearHistoryBtn" class="btn btn-secondary">🗑️ 清除当前用户记录</button>
+                </div>
+            </aside>
+
+            <main class="content">
+                <div class="recommendations-header">
+                    <div class="header-left">
+                        <button id="refreshBtn" class="btn btn-refresh" title="刷新推荐">🔄</button>
+                        <h2>🎯 为您推荐</h2>
+                    </div>
+                    <span id="recCount" class="rec-count">共 0 条推荐</span>
+                </div>
+
+                <div id="recommendationsList" class="recommendations-list">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>正在加载推荐内容...</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div id="chartModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📊 特征贡献分析</h3>
+                    <button class="close-btn" onclick="closeChartModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <h4 id="modalNewsTitle"></h4>
+                    <canvas id="featureChart"></canvas>
+                    <div id="featureExplanation" class="feature-explanation"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="newsDetailModal" class="modal">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3>📰 新闻详情</h3>
+                    <button class="close-btn" onclick="closeNewsDetailModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="newsDetailContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

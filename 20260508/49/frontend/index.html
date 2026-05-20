@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时语音分离系统</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 实时语音分离系统</h1>
+            <p class="subtitle">使用 Demucs 模型分离音频中的不同声源</p>
+        </header>
+
+        <main>
+            <section class="input-section">
+                <h2>音频输入</h2>
+                <div class="input-tabs">
+                    <button id="upload-tab" class="tab-btn active" data-tab="upload">上传文件</button>
+                    <button id="record-tab" class="tab-btn" data-tab="record">实时录制</button>
+                    <button id="history-tab" class="tab-btn" data-tab="history">历史任务</button>
+                </div>
+
+                <div id="upload-panel" class="tab-panel active">
+                    <div class="upload-area" id="upload-area">
+                        <input type="file" id="file-input" accept="audio/*" hidden>
+                        <div class="upload-content">
+                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                            <p>点击或拖拽音频文件到此处</p>
+                            <span class="hint">支持 WAV, MP3, FLAC, OGG, M4A 格式（最大 500MB）</span>
+                        </div>
+                    </div>
+                    <div id="file-info" class="file-info hidden">
+                        <span id="file-name"></span>
+                        <button id="remove-file" class="btn-remove">×</button>
+                    </div>
+                </div>
+
+                <div id="record-panel" class="tab-panel">
+                    <div class="record-area">
+                        <button id="record-btn" class="record-btn">
+                            <span class="record-icon"></span>
+                            <span id="record-text">开始录制</span>
+                        </button>
+                        <div id="recording-status" class="hidden">
+                            <span class="recording-indicator"></span>
+                            <span id="recording-time">00:00</span>
+                        </div>
+                        <p class="record-hint">使用麦克风录制多人混合音频</p>
+                    </div>
+                </div>
+
+                <div id="history-panel" class="tab-panel">
+                    <div class="history-container">
+                        <div id="history-list" class="history-list">
+                            <p class="empty-history">加载中...</p>
+                        </div>
+                        <button id="refresh-history" class="btn-secondary">刷新历史</button>
+                    </div>
+                </div>
+
+                <div class="settings">
+                    <label>
+                        分段时长（秒）:
+                        <input type="number" id="segment-duration" value="10" min="5" max="60">
+                        <span class="hint-small">（5-60秒，长音频建议使用较小值）</span>
+                    </label>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="separate-btn" class="btn-primary" disabled>
+                        开始分离
+                    </button>
+                    <button id="cancel-btn" class="btn-danger hidden">
+                        取消分离
+                    </button>
+                </div>
+            </section>
+
+            <section id="progress-section" class="progress-section hidden">
+                <h2>分离进度</h2>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span id="progress-text">准备中...</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="results-section" class="results-section hidden">
+                <h2>分离结果</h2>
+                <div class="tracks-container" id="tracks-container"></div>
+                <div class="global-controls">
+                    <button id="play-all-btn" class="btn-secondary">
+                        ▶ 全部播放
+                    </button>
+                    <button id="stop-all-btn" class="btn-secondary">
+                        ⏹ 全部停止
+                    </button>
+                    <button id="download-all-btn" class="btn-secondary">
+                        ⬇ 下载全部
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>基于 Demucs 模型的音频分离系统</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

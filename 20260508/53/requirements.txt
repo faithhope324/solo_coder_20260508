@@ -1,0 +1,11 @@
+fastapi==0.115.14
+uvicorn==0.30.6
+python-multipart==0.0.12
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.30.0
+faiss-cpu>=1.7.4
+numpy>=1.24.0
+Pillow>=10.0.0
+httpx>=0.25.0
+huggingface-hub>=0.15.0

@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    // 目标 JavaScript 版本
+    "target": "ES2022",
+    // 库
+    "lib": ["ES2023"],
+    // 模块系统
+    "module": "ESNext",
+    // 跳过库文件类型检查
+    "skipLibCheck": true,
+    // 模块解析策略
+    "moduleResolution": "bundler",
+    // 允许合成默认导入
+    "allowSyntheticDefaultImports": true,
+    // 严格模式
+    "strict": true,
+    // 不生成输出文件
+    "noEmit": true
+  },
+  // 需要编译的文件
+  "include": ["vite.config.ts"]
+}

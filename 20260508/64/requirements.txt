@@ -1,0 +1,8 @@
+dash>=2.16.0
+plotly>=5.20.0
+pandas>=2.2.0
+numpy>=1.26.0
+openpyxl>=3.1.0
+wordcloud>=1.9.3
+Pillow>=10.0.0
+matplotlib>=3.8.0

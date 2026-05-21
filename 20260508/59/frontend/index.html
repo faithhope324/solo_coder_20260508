@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交通流量预测与信号优化系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.2/dist/axios.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+            padding: 16px 32px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header h1 { font-size: 24px; margin-bottom: 4px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        .content { padding: 24px; max-width: 1400px; margin: 0 auto; }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+        .card h3 { margin-bottom: 16px; color: #262626; }
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 24px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+        }
+        .status-label { font-size: 14px; color: #595959; }
+        .status-value { font-size: 24px; font-weight: bold; }
+        .status-ready { color: #3f8600; }
+        .status-not-ready { color: #cf1322; }
+        .btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #1890ff; color: white; }
+        .btn-primary:hover { background: #40a9ff; }
+        .btn-primary:disabled { background: #d9d9d9; cursor: not-allowed; }
+        .btn-success { background: #52c41a; color: white; }
+        .btn-success:hover { background: #73d13d; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #f0f0f0; }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+            color: #595959;
+            transition: all 0.3s;
+        }
+        .tab.active { color: #1890ff; border-bottom-color: #1890ff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .empty { text-align: center; color: #999; padding: 40px; }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1890ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+        th, td { padding: 12px 16px; text-align: left; border: 1px solid #f0f0f0; }
+        th { background: #fafafa; font-weight: 600; }
+        .baseline { color: #fa8c16; font-weight: bold; }
+        .optimized { color: #52c41a; font-weight: bold; }
+        .slider {
+            flex: 1;
+            max-width: 400px;
+            height: 8px;
+            -webkit-appearance: none;
+            background: #e8e8e8;
+            border-radius: 4px;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #1890ff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 0;
+        }
+        .slider-value { min-width: 60px; font-weight: bold; color: #52c41a; font-size: 18px; }
+        .divider { height: 1px; background: #f0f0f0; margin: 24px 0; }
+        .signal-info {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .info-item {
+            padding: 12px 20px;
+            background: #fafafa;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .info-item .label { font-size: 12px; color: #666; margin-bottom: 4px; }
+        .info-item .val { font-size: 20px; font-weight: bold; color: #1890ff; }
+        .info-item .val.opt { color: #52c41a; }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+            border-radius: 8px;
+        }
+        .stat-card.bad {
+            background: linear-gradient(135deg, #fff2f0 0%, #ffccc7 100%);
+        }
+        .stat-card .v { font-size: 32px; font-weight: bold; color: #1890ff; }
+        .stat-card.bad .v { color: #f5222d; }
+        .stat-card .l { font-size: 14px; color: #595959; margin-top: 8px; }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .tag-ok { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+        .tag-bad { background: #fff2f0; color: #cf1322; border: 1px solid #ffccc7; }
+        .progress {
+            display: inline-block;
+            width: 100px;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+        .progress-fill { height: 100%; border-radius: 4px; }
+        .progress-fill.ok { background: #52c41a; }
+        .progress-fill.bad { background: #f5222d; }
+        .suggestion {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f6ffed;
+            border-radius: 8px;
+            border-left: 4px solid #52c41a;
+        }
+        .suggestion h4 { margin: 0 0 8px 0; color: #389e0d; }
+        .suggestion p { margin: 0; color: #595959; font-size: 14px; }
+        .msg {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 12px 24px;
+            border-radius: 6px;
+            color: white;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        .msg.info { background: #1890ff; }
+        .msg.ok { background: #52c41a; }
+        .msg.err { background: #f5222d; }
+        .msg.warn { background: #faad14; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .compare { display: flex; align-items: center; gap: 8px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚦 交通流量预测与信号优化系统</h1>
+        <p>基于LSTM的流量预测 · 交通仿真评估 · 智能信号配时优化</p>
+    </div>
+
+    <div class="content">
+        <div class="status-bar">
+            <div>
+                <div class="status-label">系统状态</div>
+                <div class="status-value" id="sysStatus">检查中...</div>
+            </div>
+            <button class="btn btn-primary" id="initBtn" onclick="initSystem()">初始化系统</button>
+            <button class="btn btn-primary" id="predBtn" onclick="getPrediction()" style="display:none;">获取最新预测</button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('pred')">📈 流量预测</div>
+            <div class="tab" onclick="switchTab('opt')">🎛️ 信号优化</div>
+        </div>
+
+        <div class="tab-content active" id="tab-pred">
+            <div class="card">
+                <h3>📈 交通流量预测（未来30分钟）</h3>
+                <div id="predChart" style="height: 450px;"></div>
+                <div id="predEmpty" class="empty">暂无预测数据，请先初始化系统并获取预测</div>
+            </div>
+            <div class="card">
+                <h3>📊 历史流量趋势（最近2小时）</h3>
+                <div id="histChart" style="height: 350px;"></div>
+                <div id="histEmpty" class="empty">暂无历史数据</div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-opt">
+            <div class="card">
+                <h3>🎛️ 信号配时调整</h3>
+                <p style="color:#666; margin-bottom:24px;">调整各相位的绿灯时长，系统将通过交通仿真评估优化效果。黄灯固定为3秒。</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:150px;">信号相位</th>
+                            <th style="width:120px;">当前配时 (秒)</th>
+                            <th>优化配时 (秒)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="signalBody"></tbody>
+                </table>
+                <div class="divider"></div>
+                <div class="signal-info">
+                    <div class="info-item">
+                        <div class="label">当前周期长度</div>
+                        <div class="val" id="baseTotal">120s</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">优化后周期</div>
+                        <div class="val opt" id="optTotal">120s</div>
+                    </div>
+                    <div style="flex:1; text-align:right; padding-top:10px;">
+                        <button class="btn btn-success" id="evalBtn" onclick="runSimulation()">⚡ 运行仿真评估</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>📊 优化效果对比</h3>
+                <div id="compContent"><div class="empty">请先调整信号配时并运行仿真评估</div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = 'http://127.0.0.1:5000/api';
+        let predChart = null, histChart = null;
+        let ready = false, phases = [];
+        let baseTimes = {}, optTimes = {}, compData = null;
+
+        function msg(text, type='info') {
+            const m = document.createElement('div');
+            m.className = 'msg ' + type;
+            m.textContent = text;
+            document.body.appendChild(m);
+            setTimeout(() => {
+                m.style.animation = 'fadeOut 0.3s forwards';
+                setTimeout(() => m.remove(), 300);
+            }, 3000);
+        }
+
+        function fmtTime(iso) {
+            const d = new Date(iso);
+            return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+        }
+
+        async function checkHealth() {
+            try {
+                const r = await axios.get(API + '/health');
+                ready = r.data.model_trained;
+                updateStatus();
+            } catch(e) {
+                document.getElementById('sysStatus').textContent = '无法连接';
+                document.getElementById('sysStatus').className = 'status-value status-not-ready';
+                msg('无法连接到后端服务，请确保后端已启动', 'err');
+            }
+        }
+
+        function updateStatus() {
+            const s = document.getElementById('sysStatus');
+            const ib = document.getElementById('initBtn');
+            const pb = document.getElementById('predBtn');
+            if (ready) {
+                s.textContent = '已就绪';
+                s.className = 'status-value status-ready';
+                ib.style.display = 'none';
+                pb.style.display = 'inline-block';
+            } else {
+                s.textContent = '未初始化';
+                s.className = 'status-value status-not-ready';
+                ib.style.display = 'inline-block';
+                pb.style.display = 'none';
+            }
+        }
+
+        async function getPhases() {
+            try {
+                const r = await axios.get(API + '/signal-phases');
+                if (r.data.success) {
+                    phases = r.data.phases;
+                    const t = {};
+                    phases.forEach(p => t[p.name] = p.green_time);
+                    baseTimes = {...t};
+                    optTimes = {...t};
+                    renderSignalTable();
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function renderSignalTable() {
+            const tb = document.getElementById('signalBody');
+            tb.innerHTML = '';
+            phases.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${p.name}</strong></td>
+                    <td><span class="baseline">${baseTimes[p.name] || p.green_time}s</span></td>
+                    <td>
+                        <div class="slider-row">
+                            <input type="range" class="slider" min="10" max="60"
+                                value="${optTimes[p.name] || p.green_time}"
+                                data-p="${p.name}" oninput="updateTime(this)">
+                            <span class="slider-value" id="sv-${p.name}">${optTimes[p.name] || p.green_time}s</span>
+                        </div>
+                    </td>
+                `;
+                tb.appendChild(tr);
+            });
+            updateTotals();
+        }
+
+        function updateTime(el) {
+            const p = el.dataset.p;
+            const v = parseInt(el.value);
+            optTimes[p] = v;
+            document.getElementById('sv-' + p).textContent = v + 's';
+            updateTotals();
+        }
+
+        function updateTotals() {
+            const bt = Object.values(baseTimes).reduce((a,b)=>a+b,0) + phases.length*3;
+            const ot = Object.values(optTimes).reduce((a,b)=>a+b,0) + phases.length*3;
+            document.getElementById('baseTotal').textContent = bt + 's';
+            document.getElementById('optTotal').textContent = ot + 's';
+        }
+
+        async function initSystem() {
+            if (!confirm('初始化系统将训练LSTM模型，这可能需要2-5分钟，是否继续？')) return;
+            const btn = document.getElementById('initBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>初始化中...';
+            msg('正在初始化系统并训练LSTM模型，这可能需要几分钟...', 'info');
+            try {
+                const r = await axios.post(API + '/init', {}, {timeout: 300000});
+                if (r.data.success) {
+                    msg('系统初始化完成！训练样本: ' + r.data.training_samples, 'ok');
+                    ready = true;
+                    updateStatus();
+                    getPrediction();
+                } else {
+                    msg(r.data.message, 'err');
+                }
+            } catch(e) {
+                msg('初始化失败: ' + e.message, 'err');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '初始化系统';
+            }
+        }
+
+        async function getPrediction() {
+            if (!ready) { msg('请先初始化系统', 'warn'); return; }
+            const btn = document.getElementById('predBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>预测中...';
+            try {
+                const r = await axios.get(API + '/predict');
+                if (r.data.success) {
+                    renderPredChart(r.data.prediction);
+                    renderHistChart(r.data.historical);
+                    msg('预测完成！', 'ok');
+                }
+            } catch(e) {
+                msg('预测失败: ' + e.message, 'err');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '获取最新预测';
+            }
+        }
+
+        function renderPredChart(data) {
+            document.getElementById('predEmpty').style.display = 'none';
+            if (!predChart) {
+                predChart = echarts.init(document.getElementById('predChart'));
+                window.addEventListener('resize', () => predChart.resize());
+            }
+            const ts = data.timestamps.map(fmtTime);
+            const opt = {
+                title: { text: '📈 交通流量预测（未来30分钟）', left: 'center', textStyle: {fontSize:16,fontWeight:'bold'} },
+                tooltip: { trigger: 'axis' },
+                legend: { data: ['预测值','置信区间上界','置信区间下界'], top: 30 },
+                grid: { left:'6%', right:'6%', bottom:60, top:80, containLabel:false },
+                xAxis: { type:'category', boundaryGap:false, data:ts, name:'时间', nameLocation:'middle', nameGap:25, axisLabel:{margin:8} },
+                yAxis: { type:'value', name:'车流量（辆/5分钟）', nameLocation:'middle', nameGap:60, axisLabel:{margin:8} },
+                series: [
+                    {
+                        name:'预测值', type:'line', data:data.mean, smooth:true,
+                        lineStyle:{width:3,color:'#1890ff'}, itemStyle:{color:'#1890ff'},
+                        areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[
+                            {offset:0,color:'rgba(24,144,255,0.4)'},
+                            {offset:1,color:'rgba(24,144,255,0.05)'}
+                        ]}}
+                    },
+                    {name:'置信区间上界',type:'line',data:data.upper,smooth:true,lineStyle:{type:'dashed',width:1,color:'#52c41a'},symbol:'none'},
+                    {name:'置信区间下界',type:'line',data:data.lower,smooth:true,lineStyle:{type:'dashed',width:1,color:'#fa8c16'},symbol:'none'}
+                ]
+            };
+            predChart.setOption(opt);
+        }
+
+        function renderHistChart(data) {
+            if (!data) return;
+            document.getElementById('histEmpty').style.display = 'none';
+            if (!histChart) {
+                histChart = echarts.init(document.getElementById('histChart'));
+                window.addEventListener('resize', () => histChart.resize());
+            }
+            const ts = data.timestamps.map(fmtTime);
+            const opt = {
+                title: { text: '📊 历史流量趋势（最近2小时）', left: 'center', textStyle: {fontSize:16,fontWeight:'bold'} },
+                tooltip: { trigger: 'axis' },
+                grid: { left:'6%', right:'6%', bottom:55, top:60, containLabel:false },
+                xAxis: { type:'category', boundaryGap:false, data:ts, name:'时间', nameLocation:'middle', nameGap:22, axisLabel:{margin:8} },
+                yAxis: { type:'value', name:'车流量（辆/5分钟）', nameLocation:'middle', nameGap:55, axisLabel:{margin:8} },
+                series: [{
+                    name:'历史流量', type:'line', data:data.flows, smooth:true,
+                    lineStyle:{width:2,color:'#722ed1'}, itemStyle:{color:'#722ed1'},
+                    areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[
+                        {offset:0,color:'rgba(114,46,209,0.3)'},
+                        {offset:1,color:'rgba(114,46,209,0.05)'}
+                    ]}}
+                }]
+            };
+            histChart.setOption(opt);
+        }
+
+        async function runSimulation() {
+            if (!ready) { msg('请先初始化系统', 'warn'); return; }
+            const btn = document.getElementById('evalBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>评估中...';
+            try {
+                const r = await axios.post(API + '/evaluate', {
+                    baseline: baseTimes,
+                    optimized: optTimes
+                });
+                if (r.data.success) {
+                    compData = r.data;
+                    renderComp();
+                    msg('信号配时方案评估完成！', 'ok');
+                }
+            } catch(e) {
+                console.error('评估错误:', e);
+                msg('评估失败: ' + (e.response?.data?.message || e.message), 'err');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '⚡ 运行仿真评估';
+            }
+        }
+
+        function renderComp() {
+            if (!compData) return;
+            const { baseline, optimized, improvements } = compData;
+            const items = [
+                {k:'average_wait_time', l:'平均等待时间', u:'秒', b:'lower'},
+                {k:'max_wait_time', l:'最大等待时间', u:'秒', b:'lower'},
+                {k:'total_wait_time', l:'总等待时间', u:'秒', b:'lower'},
+                {k:'throughput', l:'通过车辆数', u:'辆', b:'higher'},
+                {k:'average_queue_length', l:'平均排队长度', u:'辆', b:'lower'}
+            ];
+            const avgImp = items.filter(i => improvements[i.k] !== undefined)
+                .reduce((s,i) => s + improvements[i.k], 0) / items.length;
+            
+            let html = '';
+            html += '<div class="stats-row">';
+            html += `<div class="stat-card ${avgImp<0?'bad':''}">
+                <div class="v">${avgImp>0?'+':''}${avgImp.toFixed(1)}%</div>
+                <div class="l">综合改善率</div></div>`;
+            html += `<div class="stat-card">
+                <div class="v">${baseline.total_vehicles}</div>
+                <div class="l">仿真车辆总数</div></div>`;
+            html += `<div class="stat-card">
+                <div class="v">${baseline.cycle_length}s</div>
+                <div class="l">信号周期长度</div></div>`;
+            html += '</div>';
+            
+            html += '<table><thead><tr><th>指标</th><th>当前配时</th><th>优化配时</th><th>改善幅度</th></tr></thead><tbody>';
+            items.forEach(it => {
+                const bv = baseline[it.k], ov = optimized[it.k], imp = improvements[it.k];
+                const ok = (it.b==='lower' && imp>0) || (it.b==='higher' && imp>0);
+                const bd = typeof bv==='number' ? bv.toFixed(2) : bv;
+                const od = typeof ov==='number' ? ov.toFixed(2) : ov;
+                html += '<tr>';
+                html += `<td><strong>${it.l}</strong></td>`;
+                html += `<td><span class="baseline">${bd}${it.u}</span></td>`;
+                html += `<td><span class="optimized">${od}${it.u}</span></td>`;
+                html += '<td><div class="compare">';
+                if (ok) {
+                    html += `<span class="tag tag-ok">优化 +${imp.toFixed(1)}%</span>`;
+                    html += `<span class="progress"><span class="progress-fill ok" style="width:${Math.min(100,Math.abs(imp))}%"></span></span>`;
+                } else {
+                    html += `<span class="tag tag-bad">恶化 ${imp.toFixed(1)}%</span>`;
+                    html += `<span class="progress"><span class="progress-fill bad" style="width:${Math.min(100,Math.abs(imp))}%"></span></span>`;
+                }
+                html += '</div></td></tr>';
+            });
+            html += '</tbody></table>';
+            
+            const sug = avgImp > 0 
+                ? `当前优化方案预计可使平均等待时间降低 ${improvements.average_wait_time.toFixed(1)}%，建议采纳。`
+                : '当前方案效果不佳，建议增加流量较高方向的绿灯时长。';
+            
+            html += `<div class="suggestion">
+                <h4>💡 优化建议</h4>
+                <p>根据预测的交通流量，调整各方向绿灯时长可有效降低路口等待时间。${sug}</p>
+            </div>`;
+            
+            document.getElementById('compContent').innerHTML = html;
+        }
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.tab[onclick="switchTab('${name}')"]`).classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+            if (name === 'pred' && predChart) setTimeout(() => predChart.resize(), 100);
+            if (name === 'pred' && histChart) setTimeout(() => histChart.resize(), 100);
+        }
+
+        window.addEventListener('load', () => {
+            checkHealth();
+            getPhases();
+            setInterval(checkHealth, 30000);
+        });
+    </script>
+</body>
+</html>

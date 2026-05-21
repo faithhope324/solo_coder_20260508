@@ -1,0 +1,21 @@
+岗位名称,薪资,城市,技能要求
+前端开发工程师,13-22K/月,北京,Vue3 TypeScript Vite Pinia ElementPlus
+Python后端工程师,16-28K/月,上海,FastAPI SQLAlchemy PostgreSQL Redis
+Java开发工程师,17-28K/月,深圳,SpringCloud Nacos Sentinel MyBatis
+数据工程师,14-26K/月,杭州,Airflow dbt Spark Python SQL
+测试开发工程师,12-22K/月,成都,Pytest Appium Jenkins Docker
+网络工程师,10-18K/月,武汉,华为 思科 路由交换 防火墙 VLAN
+系统集成工程师,10-20K/月,西安,Linux 虚拟化 VMware 网络配置
+实施工程师,8-15K/月,长沙,项目实施 客户沟通 Linux 数据库
+技术支持工程师,8-14K/月,青岛,故障排查 远程支持 Linux 网络
+信息安全工程师,14-26K/月,南京,安全加固 漏洞扫描 等保测评 代码审计
+前端架构师,28-48K/月,上海,React 微前端 性能优化 工程化 Monorepo
+大数据架构师,30-50K/月,北京,Hadoop Spark Flink 数据湖 Iceberg
+AI算法专家,35-60K/月,深圳,LLM Transformer 大模型 RAG 微调
+产品总监,30-50K/月,杭州,产品战略 团队管理 商业化 用户增长
+技术总监,35-60K/月,北京,技术战略 架构设计 团队建设 成本优化
+前端实习生,4-6K/月,广州,HTML CSS JavaScript React
+Java实习生,4-6K/月,成都,Java SpringBoot MySQL Git
+Python实习生,4-6K/月,武汉,Python Django Pandas 数据分析
+测试实习生,3-5K/月,西安,功能测试 接口测试 Postman Linux
+运维实习生,3-5K/月,南京,Linux Docker Shell 网络基础

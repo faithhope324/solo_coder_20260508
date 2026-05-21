@@ -1,0 +1,65 @@
+TILE_SIZE = 40
+GRID_W = 17
+GRID_H = 13
+
+SCREEN_W = GRID_W * TILE_SIZE
+SCREEN_H = GRID_H * TILE_SIZE + 40
+
+FPS = 60
+
+EMPTY = 0
+WALL = 1
+BRICK = 2
+
+PLAYER_SPEED = 2
+ENEMY_SPEED = 1.2
+
+BOMB_TIMER_MS = 2500
+EXPLOSION_DURATION_MS = 400
+BOMB_RADIUS_DEFAULT = 2
+
+K_UP = 273
+K_DOWN = 274
+K_LEFT = 276
+K_RIGHT = 275
+K_SPACE = 32
+
+KEY_BINDINGS = {
+    'up': K_UP,
+    'down': K_DOWN,
+    'left': K_LEFT,
+    'right': K_RIGHT,
+    'bomb': K_SPACE,
+}
+
+COLOR_BG = (0, 0, 0)
+COLOR_EMPTY = (34, 139, 34)
+COLOR_EMPTY_ALT = (28, 120, 28)
+COLOR_WALL = (70, 70, 70)
+COLOR_BRICK = (160, 90, 40)
+COLOR_PLAYER = (0, 120, 255)
+COLOR_ENEMY = (220, 40, 40)
+COLOR_BOMB = (20, 20, 20)
+COLOR_EXPLOSION = (255, 180, 0)
+COLOR_TEXT = (255, 255, 255)
+COLOR_PU_BOMB = (255, 200, 0)
+COLOR_PU_SPEED = (0, 220, 220)
+COLOR_PU_WALL = (180, 80, 220)
+COLOR_PU_RADIUS = (255, 80, 80)
+
+POWERUP_DROP_CHANCE = 0.25
+POWERUP_TYPES = ['bomb', 'speed', 'wall', 'radius']
+
+POWERUP_COLORS = {
+    'bomb': COLOR_PU_BOMB,
+    'speed': COLOR_PU_SPEED,
+    'wall': COLOR_PU_WALL,
+    'radius': COLOR_PU_RADIUS,
+}
+
+POWERUP_NAMES = {
+    'bomb': '+Bomb',
+    'speed': '+Speed',
+    'wall': 'WallPass',
+    'radius': '+Fire',
+}

@@ -1,0 +1,21 @@
+{
+  "name": "终极挑战",
+  "grid_width": 15,
+  "grid_height": 13,
+  "time_limit": 360,
+  "grid": [
+    [{"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}],
+    [{"type": 1}, {"type": 3}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 0}, {"type": 1}],
+    [{"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}],
+    [{"type": 1}, {"type": 0}, {"type": 2}, {"type": 5}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 5}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 1}],
+    [{"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}],
+    [{"type": 1}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 6}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 6}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 1}],
+    [{"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}],
+    [{"type": 1}, {"type": 0}, {"type": 2}, {"type": 5}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 5}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 1}],
+    [{"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}],
+    [{"type": 1}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 1}],
+    [{"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}],
+    [{"type": 1}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 2}, {"type": 0}, {"type": 4}, {"type": 7}, {"type": 1}],
+    [{"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}, {"type": 1}]
+  ]
+}

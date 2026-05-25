@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>场景文字识别与翻译系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#6366f1',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-zone:hover,
+        .upload-zone.drag-over {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .region-card {
+            transition: all 0.2s ease;
+        }
+        
+        .region-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .confidence-bar {
+            height: 4px;
+            border-radius: 2px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .image-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .tab-inactive {
+            background-color: #f3f4f6;
+            color: #4b5563;
+        }
+        
+        .tab-inactive:hover {
+            background-color: #e5e7eb;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">场景文字识别与翻译系统</h1>
+                        <p class="text-sm text-gray-500">OCR + 智能翻译 + 图片标注</p>
+                    </div>
+                </div>
+                <div id="status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-red-100 text-red-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span id="status-text">后端服务未连接</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div id="error-container" class="hidden mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p id="error-message" class="text-red-700"></p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        处理选项
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                                </svg>
+                                源语言
+                            </label>
+                            <select id="source-lang" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="auto">自动检测</option>
+                                <option value="zh">中文</option>
+                                <option value="en">英语</option>
+                                <option value="ja">日语</option>
+                                <option value="ko">韩语</option>
+                                <option value="fr">法语</option>
+                                <option value="de">德语</option>
+                                <option value="es">西班牙语</option>
+                                <option value="ru">俄语</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                                </svg>
+                                目标语言
+                            </label>
+                            <select id="target-lang" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="en">英语</option>
+                                <option value="zh">中文</option>
+                                <option value="ja">日语</option>
+                                <option value="ko">韩语</option>
+                                <option value="fr">法语</option>
+                                <option value="de">德语</option>
+                                <option value="es">西班牙语</option>
+                                <option value="ru">俄语</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                重叠区域合并阈值: <span id="iou-value">30%</span>
+                            </label>
+                            <input type="range" id="iou-threshold" min="0" max="1" step="0.05" value="0.3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>严格</span>
+                                <span>宽松</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-200">
+                            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                显示选项
+                            </label>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="checkbox" id="draw-bboxes" checked class="w-4 h-4 text-blue-500 border-gray-300 rounded focus:ring-blue-500">
+                                    <span class="text-sm text-gray-600">绘制文字边框</span>
+                                </label>
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="checkbox" id="draw-translations" checked class="w-4 h-4 text-blue-500 border-gray-300 rounded focus:ring-blue-500">
+                                    <span class="text-sm text-gray-600">绘制翻译文字</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="file-info" class="hidden bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+                    <h3 class="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        已选择图片
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                            <img id="preview-image" alt="预览" class="w-full h-full object-contain">
+                        </div>
+                        <p id="file-name" class="text-xs text-gray-500 truncate"></p>
+                        <p id="file-size" class="text-xs text-gray-400"></p>
+                        <div class="flex gap-2">
+                            <button id="process-btn" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+                                <span id="process-btn-text">开始处理</span>
+                            </button>
+                            <button id="reset-btn" class="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                重置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3 space-y-6">
+                <div id="upload-section">
+                    <div id="upload-zone" class="upload-zone rounded-xl p-12 text-center cursor-pointer transition-all">
+                        <input id="file-input" type="file" accept="image/*" class="hidden">
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-lg font-semibold text-gray-700">拖拽图片到此处或点击上传</p>
+                                <p class="text-sm text-gray-500 mt-1">支持 JPG、PNG、BMP 等常见图片格式</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="processing-section" class="hidden bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
+                    <div class="space-y-4">
+                        <div class="loading-spinner mx-auto"></div>
+                        <p class="text-gray-600" id="processing-text">正在处理图片，请稍候...</p>
+                        <p class="text-sm text-gray-400">OCR 文字检测与翻译可能需要几秒钟</p>
+                    </div>
+                </div>
+
+                <div id="result-section" class="hidden space-y-6">
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex gap-2">
+                                    <button data-view="split" class="view-tab px-4 py-2 rounded-lg text-sm font-medium transition-all tab-active">并排</button>
+                                    <button data-view="original" class="view-tab px-4 py-2 rounded-lg text-sm font-medium transition-all tab-inactive">原图</button>
+                                    <button data-view="annotated" class="view-tab px-4 py-2 rounded-lg text-sm font-medium transition-all tab-inactive">标注图</button>
+                                    <button data-view="comparison" class="view-tab px-4 py-2 rounded-lg text-sm font-medium transition-all tab-inactive">对比图</button>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button id="zoom-out" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" title="缩小">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                                        </svg>
+                                    </button>
+                                    <span id="zoom-level" class="text-sm font-medium text-gray-600 w-16 text-center">100%</span>
+                                    <button id="zoom-in" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" title="放大">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                        </svg>
+                                    </button>
+                                    <button id="zoom-reset" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" title="重置">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                        </svg>
+                                    </button>
+                                    <div class="w-px h-6 bg-gray-300 mx-2"></div>
+                                    <button id="download-btn" class="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                        导出图片
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="image-viewer" class="image-container bg-gray-50 p-4 overflow-auto max-h-[600px]">
+                                <div id="split-view" class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <div class="text-sm text-gray-500 mb-2 text-center">原图</div>
+                                        <img id="original-img" alt="原图" class="transition-transform duration-200" style="transform-origin: top left;">
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-500 mb-2 text-center">标注图</div>
+                                        <img id="annotated-img" alt="标注图" class="transition-transform duration-200" style="transform-origin: top left;">
+                                    </div>
+                                </div>
+                                <img id="single-img" alt="图片" class="hidden transition-transform duration-200" style="transform-origin: top left;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-4">
+                                <div class="text-sm">
+                                    <span class="text-gray-500">图片尺寸：</span>
+                                    <span id="image-size" class="font-medium text-gray-700"></span>
+                                </div>
+                                <div class="w-px h-4 bg-gray-300"></div>
+                                <div class="text-sm">
+                                    <span class="text-gray-500">检测到：</span>
+                                    <span id="region-count" class="font-medium text-blue-600"></span>
+                                </div>
+                            </div>
+                            <button id="new-image-btn" class="text-sm text-gray-500 hover:text-gray-700">上传新图片</button>
+                        </div>
+                        <div id="regions-container">
+                            <div class="space-y-3">
+                                <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                    文字区域
+                                </h3>
+                                <div id="regions-list" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <div class="text-center text-sm text-gray-500">
+                <p>场景文字识别与翻译系统 v1.0.0</p>
+                <p class="mt-1">支持路牌、菜单、标识等场景图片的文字识别与多语言翻译</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const API_BASE = '/api';
+        
+        let selectedFile = null;
+        let resultData = null;
+        let currentView = 'split';
+        let zoomLevel = 100;
+        let isProcessing = false;
+
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const uploadSection = document.getElementById('upload-section');
+        const processingSection = document.getElementById('processing-section');
+        const resultSection = document.getElementById('result-section');
+        const errorContainer = document.getElementById('error-container');
+        const errorMessage = document.getElementById('error-message');
+        const statusBadge = document.getElementById('status-badge');
+        const statusText = document.getElementById('status-text');
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorContainer.classList.remove('hidden');
+            setTimeout(() => {
+                errorContainer.classList.add('hidden');
+            }, 5000);
+        }
+
+        function setOnlineStatus(online) {
+            if (online) {
+                statusBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-green-100 text-green-700';
+                statusBadge.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>后端服务正常</span>
+                `;
+            } else {
+                statusBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-red-100 text-red-700';
+                statusBadge.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>后端服务未连接</span>
+                `;
+            }
+        }
+
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`, { timeout: 5000 });
+                const data = await response.json();
+                setOnlineStatus(data.status === 'ok');
+            } catch (e) {
+                setOnlineStatus(false);
+            }
+        }
+
+        function handleFileSelect(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('请选择图片文件');
+                return;
+            }
+
+            selectedFile = file;
+            resultData = null;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('preview-image').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-size').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+            
+            uploadSection.classList.add('hidden');
+            fileInfo.classList.remove('hidden');
+            resultSection.classList.add('hidden');
+            processingSection.classList.add('hidden');
+        }
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        document.getElementById('iou-threshold').addEventListener('input', (e) => {
+            document.getElementById('iou-value').textContent = Math.round(e.target.value * 100) + '%';
+        });
+
+        document.getElementById('process-btn').addEventListener('click', async () => {
+            if (!selectedFile || isProcessing) return;
+
+            isProcessing = true;
+            const btn = document.getElementById('process-btn');
+            const btnText = document.getElementById('process-btn-text');
+            btn.disabled = true;
+            btnText.innerHTML = `
+                <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                处理中...
+            `;
+
+            fileInfo.classList.add('hidden');
+            processingSection.classList.remove('hidden');
+            resultSection.classList.add('hidden');
+            uploadSection.classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('target_lang', document.getElementById('target-lang').value);
+            formData.append('source_lang', document.getElementById('source-lang').value);
+            formData.append('iou_threshold', document.getElementById('iou-threshold').value);
+            formData.append('draw_bboxes', document.getElementById('draw-bboxes').checked);
+            formData.append('draw_translations', document.getElementById('draw-translations').checked);
+
+            try {
+                const response = await fetch(`${API_BASE}/process`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+
+                resultData = await response.json();
+                displayResults(resultData);
+            } catch (e) {
+                showError('处理失败: ' + e.message);
+                fileInfo.classList.remove('hidden');
+                processingSection.classList.add('hidden');
+            } finally {
+                isProcessing = false;
+                btn.disabled = false;
+                btnText.textContent = '开始处理';
+            }
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            selectedFile = null;
+            resultData = null;
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            processingSection.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+        });
+
+        document.getElementById('new-image-btn').addEventListener('click', () => {
+            selectedFile = null;
+            resultData = null;
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            processingSection.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+        });
+
+        function getConfidenceColor(confidence) {
+            if (confidence >= 0.9) return 'bg-green-500';
+            if (confidence >= 0.7) return 'bg-yellow-500';
+            return 'bg-red-500';
+        }
+
+        function displayResults(data) {
+            processingSection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+
+            document.getElementById('image-size').textContent = `${data.image_size.width} × ${data.image_size.height}`;
+            document.getElementById('region-count').textContent = `${data.region_count} 个文字区域`;
+
+            document.getElementById('original-img').src = `data:image/png;base64,${data.original_image}`;
+            document.getElementById('annotated-img').src = `data:image/png;base64,${data.annotated_image}`;
+            document.getElementById('single-img').src = `data:image/png;base64,${data.comparison_image}`;
+
+            const regionsList = document.getElementById('regions-list');
+            regionsList.innerHTML = '';
+
+            if (data.regions.length === 0) {
+                regionsList.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p>未检测到文字区域</p>
+                    </div>
+                `;
+                return;
+            }
+
+            data.regions.forEach((region, index) => {
+                const card = document.createElement('div');
+                card.className = 'region-card bg-white rounded-lg p-4 border border-gray-200';
+                
+                const mergedBadge = region.merged_count > 1 
+                    ? `<span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">合并 ${region.merged_count} 个区域</span>` 
+                    : '';
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between mb-2">
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium">${index + 1}</span>
+                        ${mergedBadge}
+                    </div>
+                    <div class="space-y-2">
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">原文</p>
+                            <p class="text-gray-800 font-medium">${region.original_text}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">译文</p>
+                            <p class="text-blue-600 font-medium">${region.translated_text}</p>
+                        </div>
+                        <div class="pt-2">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs text-gray-500">置信度</span>
+                                <span class="text-xs font-medium text-gray-700">${(region.confidence * 100).toFixed(1)}%</span>
+                            </div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill ${getConfidenceColor(region.confidence)}" style="width: ${region.confidence * 100}%"></div>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 pt-2 border-t border-gray-100">
+                            <div class="text-xs text-gray-500">位置: (${Math.round(region.bbox[0])}, ${Math.round(region.bbox[1])})</div>
+                            <div class="text-xs text-gray-500">大小: ${Math.round(region.size.width)} × ${Math.round(region.size.height)}</div>
+                        </div>
+                    </div>
+                `;
+                regionsList.appendChild(card);
+            });
+
+            applyZoom();
+        }
+
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-tab').forEach(tab => {
+                if (tab.dataset.view === view) {
+                    tab.className = 'view-tab px-4 py-2 rounded-lg text-sm font-medium transition-all tab-active';
+                } else {
+                    tab.className = 'view-tab px-4 py-2 rounded-lg text-sm font-medium transition-all tab-inactive';
+                }
+            });
+
+            const splitView = document.getElementById('split-view');
+            const singleImg = document.getElementById('single-img');
+
+            if (view === 'split') {
+                splitView.classList.remove('hidden');
+                singleImg.classList.add('hidden');
+            } else {
+                splitView.classList.add('hidden');
+                singleImg.classList.remove('hidden');
+                
+                if (view === 'original') {
+                    singleImg.src = `data:image/png;base64,${resultData.original_image}`;
+                } else if (view === 'annotated') {
+                    singleImg.src = `data:image/png;base64,${resultData.annotated_image}`;
+                } else if (view === 'comparison') {
+                    singleImg.src = `data:image/png;base64,${resultData.comparison_image}`;
+                }
+            }
+        }
+
+        document.querySelectorAll('.view-tab').forEach(tab => {
+            tab.addEventListener('click', () => switchView(tab.dataset.view));
+        });
+
+        function applyZoom() {
+            document.getElementById('zoom-level').textContent = zoomLevel + '%';
+            const scale = zoomLevel / 100;
+            
+            document.querySelectorAll('#image-viewer img').forEach(img => {
+                img.style.transform = `scale(${scale})`;
+            });
+        }
+
+        document.getElementById('zoom-in').addEventListener('click', () => {
+            zoomLevel = Math.min(zoomLevel + 25, 200);
+            applyZoom();
+        });
+
+        document.getElementById('zoom-out').addEventListener('click', () => {
+            zoomLevel = Math.max(zoomLevel - 25, 25);
+            applyZoom();
+        });
+
+        document.getElementById('zoom-reset').addEventListener('click', () => {
+            zoomLevel = 100;
+            applyZoom();
+        });
+
+        document.getElementById('download-btn').addEventListener('click', () => {
+            if (!resultData) return;
+            
+            const link = document.createElement('a');
+            link.href = `data:image/png;base64,${resultData.annotated_image}`;
+            link.download = 'annotated_image.png';
+            link.click();
+        });
+
+        checkHealth();
+        setInterval(checkHealth, 10000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% macro render_comment(comment, depth=0) %}
+    <div class="comment-item" data-id="{{ comment.id }}" style="margin-left: {{ depth * 30 }}px;">
+        <div class="comment-header">
+            <strong>{{ comment.nickname }}</strong>
+            <span class="comment-time">{{ comment.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+        </div>
+        <div class="comment-content">{{ comment.content_html|safe }}</div>
+        <div class="comment-actions">
+            <button class="like-btn {% if comment.user_liked %}liked{% endif %}" data-id="{{ comment.id }}">
+                {% if comment.user_liked %}&#128077;{% else %}&#128077;{% endif %}
+                <span class="like-count">{{ comment.like_count }}</span>
+            </button>
+            <button class="reply-btn" data-id="{{ comment.id }}" data-nickname="{{ comment.nickname }}">回复</button>
+        </div>
+
+        <div class="reply-form" id="reply-form-{{ comment.id }}" style="display: none;">
+            <form method="POST" action="{{ url_for('views.post_message') }}">
+                <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                <textarea name="content" placeholder="回复 @{{ comment.nickname }}..." required></textarea>
+                <div class="captcha-row">
+                    <input type="text" name="captcha" placeholder="验证码" required maxlength="4">
+                    <img src="{{ url_for('views.captcha') }}" alt="验证码" class="captcha-img" onclick="this.src='{{ url_for('views.captcha') }}?'+Math.random()">
+                </div>
+                <button type="submit" class="btn btn-small">发送回复</button>
+                <button type="button" class="btn btn-small btn-cancel cancel-reply" data-id="{{ comment.id }}">取消</button>
+            </form>
+        </div>
+
+        {% if comment.replies %}
+            <div class="replies">
+                {% for reply in comment.replies %}
+                    {{ render_comment(reply, depth + 1) }}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{% block content %}
+    <section class="post-form">
+        <h2>发表留言</h2>
+        <form method="POST" action="{{ url_for('views.post_message') }}">
+            <input type="text" name="nickname" placeholder="昵称（可选，默认匿名用户）" maxlength="50">
+            <textarea name="content" placeholder="支持 Markdown 语法..." required rows="5"></textarea>
+            <div class="captcha-row">
+                <input type="text" name="captcha" placeholder="验证码" required maxlength="4">
+                <img src="{{ url_for('views.captcha') }}" alt="验证码" class="captcha-img" onclick="this.src='{{ url_for('views.captcha') }}?'+Math.random()" title="点击刷新">
+            </div>
+            <button type="submit" class="btn btn-primary">发布留言</button>
+        </form>
+    </section>
+
+    <section class="messages-list">
+        <h2>留言列表 ({{ messages|length }})</h2>
+        {% if messages %}
+            {% for message in messages %}
+                <article class="message-card {% if message.is_pinned %}pinned{% endif %}">
+                    {% if message.is_pinned %}
+                        <span class="pin-badge">📌 置顶</span>
+                    {% endif %}
+                    <div class="message-header">
+                        <strong>{{ message.nickname }}</strong>
+                        <span class="message-time">{{ message.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                    </div>
+                    <div class="message-content">{{ message.content_html|safe }}</div>
+                    <div class="message-actions">
+                        <button class="like-btn {% if message.user_liked %}liked{% endif %}" data-id="{{ message.id }}">
+                            {% if message.user_liked %}&#128077;{% else %}&#128077;{% endif %}
+                            <span class="like-count">{{ message.like_count }}</span>
+                        </button>
+                        <button class="reply-btn" data-id="{{ message.id }}" data-nickname="{{ message.nickname }}">回复</button>
+                    </div>
+
+                    <div class="reply-form" id="reply-form-{{ message.id }}" style="display: none;">
+                        <form method="POST" action="{{ url_for('views.post_message') }}">
+                            <input type="hidden" name="parent_id" value="{{ message.id }}">
+                            <textarea name="content" placeholder="回复 @{{ message.nickname }}..." required></textarea>
+                            <div class="captcha-row">
+                                <input type="text" name="captcha" placeholder="验证码" required maxlength="4">
+                                <img src="{{ url_for('views.captcha') }}" alt="验证码" class="captcha-img" onclick="this.src='{{ url_for('views.captcha') }}?'+Math.random()">
+                            </div>
+                            <button type="submit" class="btn btn-small">发送回复</button>
+                            <button type="button" class="btn btn-small btn-cancel cancel-reply" data-id="{{ message.id }}">取消</button>
+                        </form>
+                    </div>
+
+                    {% if message.replies %}
+                        <div class="replies">
+                            {% for reply in message.replies %}
+                                {{ render_comment(reply, 1) }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        {% else %}
+            <p class="empty-tip">暂无留言，来发布第一条吧！</p>
+        {% endif %}
+    </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.like-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var messageId = this.dataset.id;
+            var likeCountSpan = this.querySelector('.like-count');
+
+            fetch('/like/' + messageId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    likeCountSpan.textContent = data.count;
+                    if (data.liked) {
+                        btn.classList.add('liked');
+                    } else {
+                        btn.classList.remove('liked');
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+
+    document.querySelectorAll('.reply-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = this.dataset.id;
+            var form = document.getElementById('reply-form-' + id);
+            document.querySelectorAll('.reply-form').forEach(function(f) {
+                if (f !== form) f.style.display = 'none';
+            });
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        });
+    });
+
+    document.querySelectorAll('.cancel-reply').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = this.dataset.id;
+            document.getElementById('reply-form-' + id).style.display = 'none';
+        });
+    });
+
+    document.querySelectorAll('.captcha-img').forEach(function(img) {
+        img.style.cursor = 'pointer';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地震波传播模拟系统</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>地震波传播模拟系统</h1>
+            <p class="subtitle">基于有限差分法的弹性波动方程求解</p>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="panel">
+                    <h2>模拟参数</h2>
+                    
+                    <div class="param-group">
+                        <label for="grid-nx">网格X方向格点数</label>
+                        <input type="number" id="grid-nx" value="200" min="50" max="400">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="grid-nz">网格Z方向格点数</label>
+                        <input type="number" id="grid-nz" value="200" min="50" max="400">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="grid-dx">X方向间距 (m)</label>
+                        <input type="number" id="grid-dx" value="5" min="1" max="20" step="1">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="grid-dz">Z方向间距 (m)</label>
+                        <input type="number" id="grid-dz" value="5" min="1" max="20" step="1">
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>介质参数</h2>
+                    
+                    <div class="param-group">
+                        <label for="vp">P波速度 (m/s)</label>
+                        <input type="number" id="vp" value="3000" min="1000" max="8000" step="100">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="vs">S波速度 (m/s)</label>
+                        <input type="number" id="vs" value="1732" min="500" max="5000" step="100">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="rho">密度 (kg/m³)</label>
+                        <input type="number" id="rho" value="2500" min="1000" max="5000" step="100">
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>震源参数</h2>
+                    
+                    <div class="param-group">
+                        <label for="source-type">震源类型</label>
+                        <select id="source-type">
+                            <option value="ricker">Ricker子波</option>
+                            <option value="gaussian">高斯脉冲</option>
+                        </select>
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="source-freq">震源频率 (Hz)</label>
+                        <input type="number" id="source-freq" value="20" min="5" max="100" step="1">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="source-x">震源X位置 (格点)</label>
+                        <input type="number" id="source-x" value="100" min="10" max="190">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="source-z">震源Z位置 (格点)</label>
+                        <input type="number" id="source-z" value="50" min="10" max="190">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="source-amp">震源振幅</label>
+                        <input type="number" id="source-amp" value="1000000" min="1000" max="10000000" step="100000">
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>接收器阵列</h2>
+                    
+                    <div class="param-group">
+                        <label for="array-type">阵列类型</label>
+                        <select id="array-type">
+                            <option value="line">线性阵列</option>
+                            <option value="grid">网格阵列</option>
+                        </select>
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="array-num">接收器数量</label>
+                        <input type="number" id="array-num" value="15" min="1" max="50">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="array-start-x">起始X位置</label>
+                        <input type="number" id="array-start-x" value="30" min="10" max="190">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="array-start-z">起始Z位置</label>
+                        <input type="number" id="array-start-z" value="180" min="10" max="190">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="array-end-x">结束X位置</label>
+                        <input type="number" id="array-end-x" value="170" min="10" max="190">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="array-end-z">结束Z位置</label>
+                        <input type="number" id="array-end-z" value="180" min="10" max="190">
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>模拟控制</h2>
+                    
+                    <div class="param-group">
+                        <label for="total-steps">总步数</label>
+                        <input type="number" id="total-steps" value="800" min="100" max="5000" step="100">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="frame-interval">帧间隔</label>
+                        <input type="number" id="frame-interval" value="5" min="1" max="20">
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="colormap">颜色映射</label>
+                        <select id="colormap">
+                            <option value="seismic">地震波色标</option>
+                            <option value="heatmap">热力图</option>
+                            <option value="grayscale">灰度图</option>
+                            <option value="viridis">Viridis</option>
+                        </select>
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="speed">播放速度</label>
+                        <select id="speed">
+                            <option value="200">慢速</option>
+                            <option value="100" selected>正常</option>
+                            <option value="50">快速</option>
+                            <option value="20">极快</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="btn-configure" class="btn btn-primary">初始化模拟</button>
+                    <button id="btn-run" class="btn btn-success">开始模拟</button>
+                    <button id="btn-pause" class="btn btn-warning" disabled>暂停</button>
+                    <button id="btn-reset" class="btn btn-danger">重置</button>
+                </div>
+            </aside>
+
+            <main class="content">
+                <div class="status-bar">
+                    <div class="status-item">
+                        <span class="status-label">状态:</span>
+                        <span id="status-text" class="status-value">未初始化</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">时间步:</span>
+                        <span id="step-text" class="status-value">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">模拟时间:</span>
+                        <span id="time-text" class="status-value">0.000 s</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">时间间隔:</span>
+                        <span id="dt-text" class="status-value">-</span>
+                    </div>
+                </div>
+
+                <div class="visualization-area">
+                    <div class="wavefield-container">
+                        <h3>波场传播图</h3>
+                        <div class="canvas-wrapper">
+                            <canvas id="wavefield-canvas"></canvas>
+                            <div class="color-bar">
+                                <div class="color-bar-scale">
+                                    <span id="color-max">+max</span>
+                                    <span id="color-zero">0</span>
+                                    <span id="color-min">-max</span>
+                                </div>
+                                <canvas id="colorbar-canvas"></canvas>
+                            </div>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div id="progress-fill" class="progress-fill"></div>
+                            </div>
+                            <span id="progress-text">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="seismogram-container">
+                        <h3>合成地震图</h3>
+                        <div class="seismogram-controls">
+                            <label>
+                                <input type="checkbox" id="show-all-traces" checked>
+                                显示所有道
+                            </label>
+                            <label>
+                                选择接收器:
+                                <select id="selected-receiver"></select>
+                            </label>
+                        </div>
+                        <canvas id="seismogram-canvas"></canvas>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

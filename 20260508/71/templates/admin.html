@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}管理后台 - 匿名留言板{% endblock %}
+
+{% block content %}
+    <div class="admin-panel">
+        <h2>管理后台</h2>
+        <p>共 {{ messages|length }} 条留言</p>
+
+        <div class="admin-messages">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="admin-message-item {% if message.is_pinned %}pinned{% endif %}">
+                        <div class="admin-message-header">
+                            <strong>{{ message.nickname }}</strong>
+                            <span>{{ message.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                            {% if message.is_pinned %}
+                                <span class="pin-badge">📌 已置顶</span>
+                            {% endif %}
+                            {% if message.parent_id %}
+                                <span class="reply-badge">回复 #{{ message.parent_id }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="admin-message-content">{{ message.content|truncate(200) }}</div>
+                        <div class="admin-actions">
+                            <form method="POST" action="{{ url_for('views.pin_message', message_id=message.id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-small">
+                                    {% if message.is_pinned %}取消置顶{% else %}置顶{% endif %}
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('views.delete_message', message_id=message.id) }}" style="display: inline;" onsubmit="return confirm('确定要删除这条留言吗？');">
+                                <button type="submit" class="btn btn-small btn-danger">删除</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty-tip">暂无留言</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

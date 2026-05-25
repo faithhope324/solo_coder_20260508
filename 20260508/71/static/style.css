@@ -1,0 +1,459 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f7fa;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.site-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 0;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.site-header h1 {
+    font-size: 24px;
+}
+
+.site-header h1 a {
+    color: white;
+    text-decoration: none;
+}
+
+.site-header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.site-header nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
+    opacity: 0.9;
+    transition: opacity 0.2s;
+}
+
+.site-header nav a:hover {
+    opacity: 1;
+}
+
+main {
+    min-height: calc(100vh - 200px);
+}
+
+.flash-messages {
+    margin-bottom: 20px;
+}
+
+.flash {
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.flash-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.flash-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.post-form,
+.admin-login,
+.admin-panel {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 30px;
+}
+
+.post-form h2,
+.admin-login h2,
+.admin-panel h2,
+.messages-list h2 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-size: 20px;
+}
+
+.post-form input[type="text"],
+.post-form input[type="password"],
+.post-form textarea,
+.admin-login input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 15px;
+    transition: border-color 0.2s;
+    font-family: inherit;
+}
+
+.post-form input:focus,
+.post-form textarea:focus,
+.admin-login input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.captcha-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.captcha-row input {
+    flex: 1;
+    margin-bottom: 0 !important;
+}
+
+.captcha-img {
+    height: 40px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-small {
+    padding: 6px 14px;
+    font-size: 13px;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.btn-cancel {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background-color: #7f8c8d;
+}
+
+.message-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 20px;
+    position: relative;
+    transition: transform 0.2s;
+}
+
+.message-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.message-card.pinned {
+    border-left: 4px solid #f39c12;
+    background-color: #fffef5;
+}
+
+.pin-badge {
+    display: inline-block;
+    background-color: #f39c12;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.reply-badge {
+    display: inline-block;
+    background-color: #3498db;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+.message-header,
+.comment-header,
+.admin-message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.message-header strong,
+.comment-header strong,
+.admin-message-header strong {
+    color: #2c3e50;
+    font-size: 15px;
+}
+
+.message-time,
+.comment-time,
+.admin-message-header span {
+    color: #95a5a6;
+    font-size: 13px;
+}
+
+.message-content,
+.comment-content,
+.admin-message-content {
+    color: #555;
+    margin-bottom: 15px;
+    word-wrap: break-word;
+}
+
+.message-content pre,
+.comment-content pre {
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 10px 0;
+}
+
+.message-content code,
+.comment-content code {
+    background-color: #f1f3f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 13px;
+}
+
+.message-content pre code,
+.comment-content pre code {
+    background: none;
+    padding: 0;
+}
+
+.message-actions,
+.comment-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.like-btn,
+.reply-btn {
+    background: none;
+    border: 1px solid #e9ecef;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    color: #666;
+}
+
+.like-btn:hover,
+.reply-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.like-btn.liked {
+    background-color: #e8f5e9;
+    border-color: #4caf50;
+    color: #4caf50;
+}
+
+.reply-form {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.reply-form textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.replies {
+    margin-top: 15px;
+}
+
+.comment-item {
+    background-color: #fafbfc;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    border-left: 3px solid #667eea;
+}
+
+.empty-tip {
+    text-align: center;
+    color: #95a5a6;
+    padding: 40px;
+    background: white;
+    border-radius: 12px;
+}
+
+.admin-login {
+    max-width: 400px;
+    margin: 60px auto;
+    text-align: center;
+}
+
+.admin-login .hint {
+    margin-top: 15px;
+    color: #95a5a6;
+    font-size: 13px;
+}
+
+.admin-messages {
+    margin-top: 20px;
+}
+
+.admin-message-item {
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.admin-message-item.pinned {
+    border-left: 4px solid #f39c12;
+    background-color: #fffef5;
+}
+
+.admin-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.admin-panel > p {
+    color: #7f8c8d;
+    margin-bottom: 15px;
+}
+
+.site-footer {
+    text-align: center;
+    padding: 30px 0;
+    color: #95a5a6;
+    font-size: 14px;
+    margin-top: 40px;
+}
+
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4,
+.comment-content h1,
+.comment-content h2,
+.comment-content h3,
+.comment-content h4 {
+    margin: 15px 0 10px;
+    color: #2c3e50;
+}
+
+.message-content blockquote,
+.comment-content blockquote {
+    border-left: 4px solid #667eea;
+    padding-left: 15px;
+    color: #7f8c8d;
+    margin: 10px 0;
+    font-style: italic;
+}
+
+.message-content ul,
+.message-content ol,
+.comment-content ul,
+.comment-content ol {
+    margin: 10px 0 10px 30px;
+}
+
+.message-content img,
+.comment-content img {
+    max-width: 100%;
+    border-radius: 6px;
+}
+
+.message-content a,
+.comment-content a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.message-content a:hover,
+.comment-content a:hover {
+    text-decoration: underline;
+}
+
+.message-content table,
+.comment-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+}
+
+.message-content th,
+.message-content td,
+.comment-content th,
+.comment-content td {
+    border: 1px solid #e9ecef;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.message-content th,
+.comment-content th {
+    background-color: #f8f9fa;
+}

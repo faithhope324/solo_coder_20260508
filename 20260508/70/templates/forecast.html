@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>预测结果 - 超市销售数据预测工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .main-container {
+            padding-top: 30px;
+            padding-bottom: 50px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 18px 25px;
+        }
+        .card-body {
+            padding: 25px;
+        }
+        .plot-container {
+            width: 100%;
+            min-height: 400px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 25px;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .model-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .nav-tabs {
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            color: #666;
+            font-weight: 500;
+            padding: 12px 20px;
+        }
+        .nav-tabs .nav-link.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            background: transparent;
+        }
+        .summary-card .card-body {
+            padding: 20px;
+        }
+        .bg-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        }
+        .bg-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+        }
+        .bg-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+        }
+        .bg-warning {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%) !important;
+        }
+        .thead-dark {
+            background: linear-gradient(135deg, #434343 0%, #000000 100%);
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f0f3ff;
+        }
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <a href="{{ url_for('index') }}" class="btn btn-light back-btn shadow-sm">
+        ← 返回首页
+    </a>
+
+    <div class="container main-container">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold">📈 销售预测结果</h2>
+            <p class="text-muted mt-2">
+                模型类型: <span class="model-badge">{{ model_info.model_type }}</span>
+                | 训练数据: {{ model_info.training_points }} 条
+                | 时间范围: {{ model_info.date_range }}
+            </p>
+        </div>
+
+        {{ summary_cards|safe }}
+
+        <ul class="nav nav-tabs mb-4" id="forecastTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="history-tab" data-bs-toggle="tab" data-bs-target="#history">
+                    📊 历史趋势
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="forecast-tab" data-bs-toggle="tab" data-bs-target="#forecast">
+                    🔮 预测结果
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="comparison-tab" data-bs-toggle="tab" data-bs-target="#comparison">
+                    📋 对比分析
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="table-tab" data-bs-toggle="tab" data-bs-target="#table">
+                    📑 详细数据
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="forecastTabsContent">
+            <div class="tab-pane fade show active" id="history">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">历史销售趋势</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="plot-container" id="history-plot">
+                            {{ historical_plot|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="forecast">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">销售预测（含95%置信区间）</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="plot-container" id="forecast-plot">
+                            {{ forecast_plot|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="comparison">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">历史与预测对比</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="plot-container" id="comparison-plot">
+                            {{ comparison_plot|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="table">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">预测详细数据</h5>
+                    </div>
+                    <div class="card-body">
+                        {{ prediction_table|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">🎯 预测摘要</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">预测周期</th>
+                                <td>{{ summary.start_date }} 至 {{ summary.end_date }} ({{ summary.periods }}天)</td>
+                            </tr>
+                            <tr>
+                                <th>使用模型</th>
+                                <td><span class="badge bg-primary">{{ summary.model_type }}</span></td>
+                            </tr>
+                            <tr>
+                                <th>预测总销售额</th>
+                                <td><strong class="text-success">¥{{ '%.2f'|format(summary.total_predicted) }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">预测区间（下限）</th>
+                                <td class="text-warning">¥{{ '%.2f'|format(summary.total_lower) }}</td>
+                            </tr>
+                            <tr>
+                                <th>预测区间（上限）</th>
+                                <td class="text-success">¥{{ '%.2f'|format(summary.total_upper) }}</td>
+                            </tr>
+                            <tr>
+                                <th>日均预测销售额</th>
+                                <td><strong>¥{{ '%.2f'|format(summary.average_predicted) }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                {% if model_info.parameters %}
+                <hr>
+                <h6 class="fw-bold mb-3">模型参数</h6>
+                <div class="alert alert-info">
+                    {% for key, value in model_info.parameters.items() %}
+                        <strong>{{ key }}:</strong> {{ value }}
+                        {% if not loop.last %} | {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                🔄 重新预测
+            </a>
+            <a href="{{ url_for('reset') }}" class="btn btn-outline-secondary btn-lg ms-3">
+                🗑️ 重置数据
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabEl = document.querySelector('button[data-bs-toggle="tab"]');
+            tabEl.addEventListener('shown.bs.tab', function (event) {
+                window.dispatchEvent(new Event('resize'));
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超市销售数据预测工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .main-container {
+            padding-top: 30px;
+            padding-bottom: 50px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+        .card-body {
+            padding: 30px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 25px;
+            transition: transform 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 25px;
+        }
+        .btn-success:hover {
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+        }
+        .info-badge {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: inline-block;
+            margin: 5px;
+        }
+        .table-preview {
+            font-size: 0.9em;
+        }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            transition: border-color 0.3s;
+            background: #fafafa;
+        }
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f5f3ff;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #333;
+        }
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container main-container">
+        <div class="text-center mb-5">
+            <h1 class="text-white display-4 fw-bold">🛒 超市销售数据预测工具</h1>
+            <p class="text-white-50 mt-3">基于 ARIMA / Prophet 模型的智能销售预测系统</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">📊 数据上传</h4>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data">
+                            <div class="mb-4">
+                                <label class="form-label">选择 CSV 文件</label>
+                                <div class="upload-area">
+                                    <input type="file" name="file" id="file" class="form-control" accept=".csv" required>
+                                    <div class="mt-3">
+                                        <small class="text-muted">支持中文/英文列名，自动检测：日期、销售额、促销标记</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    📤 上传并分析数据
+                                </button>
+                            </div>
+                        </form>
+
+                        <hr class="my-4">
+
+                        {% if has_sample %}
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('load_sample') }}" class="btn btn-outline-primary">
+                                📁 加载示例数据
+                            </a>
+                            <a href="{{ url_for('download_template') }}" class="btn btn-outline-secondary">
+                                📥 下载数据模板
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if has_data %}
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">⚙️ 预测设置</h4>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('forecast') }}" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">预测模型</label>
+                                <select name="model_type" class="form-select">
+                                    <option value="auto">自动选择（推荐）</option>
+                                    {% if 'Prophet' in available_models %}
+                                    <option value="prophet">Prophet ✓ 已安装</option>
+                                    {% else %}
+                                    <option value="prophet" disabled>Prophet (未安装，请运行: {{ model_install_info['Prophet'] }})</option>
+                                    {% endif %}
+                                    {% if 'ARIMA' in available_models %}
+                                    <option value="arima">ARIMA ✓ 已安装</option>
+                                    {% else %}
+                                    <option value="arima" disabled>ARIMA (未安装，请运行: {{ model_install_info['ARIMA'] }})</option>
+                                    {% endif %}
+                                </select>
+                                {% if available_models|length < 2 %}
+                                <div class="alert alert-warning mt-2 mb-0">
+                                    <small>
+                                        <strong>提示:</strong> 仅安装了 {{ available_models|join('、') if available_models else '无' }} 模型。
+                                        建议安装全部模型以获得最佳预测效果。
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">预测天数</label>
+                                <input type="number" name="forecast_days" value="7" min="1" max="30" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="auto_tune" checked class="form-check-input" id="auto_tune">
+                                    <label class="form-check-label" for="auto_tune">自动调参（ARIMA）</label>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">未来促销日期（可选，逗号分隔）</label>
+                                <input type="text" name="promo_dates" placeholder="例如: 2026-05-25, 2026-05-30" class="form-control">
+                                <small class="text-muted">指定未来的促销日期以提高预测准确度</small>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    🚀 开始预测
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-lg-6">
+                {% if has_data %}
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">📋 数据概览</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <span class="info-badge">📅 日期列: {{ column_info.date_column }}</span>
+                            <span class="info-badge">💰 销售额列: {{ column_info.sales_column }}</span>
+                            <span class="info-badge">🏷️ 促销列: {{ column_info.promo_column }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="info-badge">📊 数据量: {{ column_info.total_rows }} 条</span>
+                            <span class="info-badge">📆 时间范围: {{ column_info.date_range }}</span>
+                        </div>
+
+                        <hr>
+
+                        <h6 class="fw-bold mb-3">数据预览（前10条）</h6>
+                        <div class="table-responsive table-preview">
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                    <tr>
+                                        {% for key in data_preview[0].keys() %}
+                                        <th>{{ key }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in data_preview %}
+                                    <tr>
+                                        {% for value in row.values() %}
+                                        <td>{{ value }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3 text-end">
+                            <a href="{{ url_for('reset') }}" class="btn btn-outline-danger btn-sm">
+                                🔄 重置数据
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">ℹ️ 使用说明</h4>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">CSV 文件格式要求</h6>
+                        <ul class="list-group list-group-flush mb-4">
+                            <li class="list-group-item d-flex align-items-center">
+                                <span class="badge bg-primary me-3">1</span>
+                                <div>
+                                    <strong>日期列</strong>：如 date、日期、交易日期等
+                                </div>
+                            </li>
+                            <li class="list-group-item d-flex align-items-center">
+                                <span class="badge bg-success me-3">2</span>
+                                <div>
+                                    <strong>销售额列</strong>：如 sales、销售额、营业额等
+                                </div>
+                            </li>
+                            <li class="list-group-item d-flex align-items-center">
+                                <span class="badge bg-warning me-3">3</span>
+                                <div>
+                                    <strong>促销标记列（可选）</strong>：如 promo、促销等，值为 0/1 或 是/否
+                                </div>
+                            </li>
+                        </ul>
+
+                        <h6 class="fw-bold mb-3">支持的列名</h6>
+                        <div class="mb-3">
+                            <small class="text-muted">日期：date, 日期, 时间, dt, day, 日期时间, 交易日期</small><br>
+                            <small class="text-muted">销售额：sales, 销售额, 销量, 销售, amount, revenue, 营业额, 销售金额</small><br>
+                            <small class="text-muted">促销：promo, promotion, 促销, 是否促销, 折扣, 优惠</small>
+                        </div>
+
+                        <h6 class="fw-bold mb-3">模型说明</h6>
+                        <div class="alert alert-info">
+                            <strong>Prophet：</strong>Facebook 开源的时间序列预测模型，适合具有季节性效应的数据<br>
+                            <strong>ARIMA：</strong>经典统计模型，适合平稳时间序列预测
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

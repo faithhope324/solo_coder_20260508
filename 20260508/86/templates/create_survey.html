@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建问卷</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">创建新问卷</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="mb-6">
+                <label class="block text-gray-700 font-semibold mb-2">创建者ID</label>
+                <input type="text" id="creatorId" placeholder="输入您的ID" 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 font-semibold mb-2">问卷标题</label>
+                <input type="text" id="surveyTitle" placeholder="输入问卷标题" 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 font-semibold mb-2">问卷描述</label>
+                <textarea id="surveyDescription" placeholder="输入问卷描述（可选）" rows="3"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <label class="block text-gray-700 font-semibold">题目列表</label>
+                    <button onclick="addQuestion()" 
+                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition">
+                        + 添加题目
+                    </button>
+                </div>
+                <div id="questionsContainer"></div>
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="createSurvey()" 
+                    class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition">
+                    创建问卷
+                </button>
+                <button onclick="window.location.href='/create-survey'" 
+                    class="px-6 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-semibold transition">
+                    重置
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-md mx-4 relative">
+            <h3 class="text-xl font-bold text-green-600 mb-4">✅ 问卷创建成功！</h3>
+            <div class="mb-4">
+                <p class="text-gray-600 mb-2">问卷ID:</p>
+                <p id="surveyIdDisplay" class="font-mono bg-gray-100 p-2 rounded"></p>
+            </div>
+            <div class="mb-4">
+                <p class="text-gray-600 mb-2">填写链接:</p>
+                <p id="shareLink" class="text-blue-500 break-all"></p>
+            </div>
+            <div id="copyFeedback" class="hidden mb-4 text-center text-green-600 font-semibold">
+                ✅ 链接已复制到剪贴板！
+            </div>
+            <div class="flex gap-2">
+                <button onclick="copyLink()" 
+                    class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition">
+                    复制链接
+                </button>
+                <button onclick="viewResults()" 
+                    class="flex-1 bg-purple-500 hover:bg-purple-600 text-white py-2 rounded-lg transition">
+                    查看结果
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let questionCount = 0;
+        let createdSurveyId = null;
+
+        function addQuestion() {
+            questionCount++;
+            const container = document.getElementById('questionsContainer');
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50';
+            questionDiv.id = `question-${questionCount}`;
+            
+            questionDiv.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <span class="font-semibold text-gray-700">题目 ${questionCount}</span>
+                    <button onclick="removeQuestion(${questionCount})" 
+                        class="text-red-500 hover:text-red-700 text-sm">删除</button>
+                </div>
+                <input type="text" placeholder="题目内容" class="question-text w-full px-3 py-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <select class="question-type w-full px-3 py-2 border rounded mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="single_choice">单选题</option>
+                    <option value="multiple_choice">多选题</option>
+                </select>
+                <div class="options-container mb-2">
+                    <p class="text-sm text-gray-600 mb-2">选项：</p>
+                    <div class="options-list space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" placeholder="选项 1" class="option-input flex-1 px-3 py-2 border rounded">
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" placeholder="选项 2" class="option-input flex-1 px-3 py-2 border rounded">
+                        </div>
+                    </div>
+                </div>
+                <button onclick="addOption(this)" class="text-sm text-blue-500 hover:text-blue-700">+ 添加选项</button>
+                <div class="mt-2">
+                    <label class="flex items-center">
+                        <input type="checkbox" class="required-checkbox mr-2" checked>
+                        <span class="text-sm text-gray-600">必答题</span>
+                    </label>
+                </div>
+            `;
+            
+            container.appendChild(questionDiv);
+        }
+
+        function removeQuestion(id) {
+            const element = document.getElementById(`question-${id}`);
+            if (element) element.remove();
+        }
+
+        function addOption(button) {
+            const optionsList = button.parentElement.querySelector('.options-list');
+            const optionCount = optionsList.children.length + 1;
+            const newOption = document.createElement('div');
+            newOption.className = 'flex gap-2';
+            newOption.innerHTML = `
+                <input type="text" placeholder="选项 ${optionCount}" class="option-input flex-1 px-3 py-2 border rounded">
+                <button onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 px-2">×</button>
+            `;
+            optionsList.appendChild(newOption);
+        }
+
+        function collectQuestions() {
+            const questions = [];
+            const questionDivs = document.querySelectorAll('#questionsContainer > div');
+            
+            questionDivs.forEach(div => {
+                const text = div.querySelector('.question-text').value;
+                const type = div.querySelector('.question-type').value;
+                const required = div.querySelector('.required-checkbox').checked;
+                const options = [];
+                
+                div.querySelectorAll('.option-input').forEach(opt => {
+                    if (opt.value.trim()) options.push(opt.value.trim());
+                });
+                
+                if (text.trim() && options.length >= 2) {
+                    questions.push({ text: text.trim(), type, options, required });
+                }
+            });
+            
+            return questions;
+        }
+
+        async function createSurvey() {
+            const creatorId = document.getElementById('creatorId').value.trim();
+            const title = document.getElementById('surveyTitle').value.trim();
+            const description = document.getElementById('surveyDescription').value.trim();
+            const questions = collectQuestions();
+
+            if (!creatorId) { alert('请输入创建者ID'); return; }
+            if (!title) { alert('请输入问卷标题'); return; }
+            if (questions.length === 0) { alert('请至少添加一个题目（至少2个选项）'); return; }
+
+            try {
+                const response = await fetch('/api/surveys/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description, creator_id: creatorId, questions })
+                });
+
+                const data = await response.json();
+                createdSurveyId = data.id;
+                
+                document.getElementById('surveyIdDisplay').textContent = data.id;
+                document.getElementById('shareLink').textContent = window.location.origin + '/survey/' + data.id;
+                document.getElementById('successModal').classList.remove('hidden');
+                document.getElementById('successModal').classList.add('flex');
+            } catch (error) {
+                alert('创建失败: ' + error.message);
+            }
+        }
+
+        function copyLink() {
+            const link = document.getElementById('shareLink').textContent;
+            navigator.clipboard.writeText(link).then(() => {
+                const feedback = document.getElementById('copyFeedback');
+                feedback.classList.remove('hidden');
+                setTimeout(() => {
+                    feedback.classList.add('hidden');
+                }, 2000);
+            }).catch(() => {
+                const feedback = document.getElementById('copyFeedback');
+                feedback.textContent = '⚠️ 复制失败，请手动复制';
+                feedback.classList.remove('hidden');
+                feedback.classList.remove('text-green-600');
+                feedback.classList.add('text-red-600');
+            });
+        }
+
+        function viewResults() {
+            window.location.href = `/survey/${createdSurveyId}/results`;
+        }
+
+        addQuestion();
+    </script>
+</body>
+</html>

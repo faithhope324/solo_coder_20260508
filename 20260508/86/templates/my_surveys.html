@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的问卷</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">我的问卷</h1>
+            <a href="/create-survey" 
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition">
+                + 创建新问卷
+            </a>
+        </div>
+
+        <div id="loading" class="text-center py-20">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p class="text-gray-600">加载中...</p>
+        </div>
+
+        <div id="surveysList" class="hidden space-y-4"></div>
+
+        <div id="emptyState" class="hidden text-center py-20">
+            <div class="text-6xl mb-4">📋</div>
+            <h2 class="text-xl font-semibold text-gray-600 mb-2">暂无问卷</h2>
+            <p class="text-gray-500 mb-6">点击上方按钮创建您的第一个问卷</p>
+            <a href="/create-survey" 
+                class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition">
+                创建问卷
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const creatorId = window.location.pathname.split('/')[2];
+
+        async function loadSurveys() {
+            try {
+                const response = await fetch(`/api/surveys/creator/${creatorId}`);
+                const surveys = await response.json();
+
+                document.getElementById('loading').classList.add('hidden');
+
+                if (surveys.length === 0) {
+                    document.getElementById('emptyState').classList.remove('hidden');
+                    return;
+                }
+
+                renderSurveys(surveys);
+                document.getElementById('surveysList').classList.remove('hidden');
+            } catch (error) {
+                alert('加载失败: ' + error.message);
+            }
+        }
+
+        async function renderSurveys(surveys) {
+            const container = document.getElementById('surveysList');
+            container.innerHTML = '';
+
+            for (const survey of surveys) {
+                const countRes = await fetch(`/api/responses/survey/${survey.id}/count`);
+                const countData = await countRes.json();
+
+                const div = document.createElement('div');
+                div.className = 'bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition';
+                
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <h3 class="text-xl font-semibold text-gray-800">${survey.title}</h3>
+                                <span class="px-2 py-1 text-xs rounded ${survey.is_active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'}">
+                                    ${survey.is_active ? '进行中' : '已关闭'}
+                                </span>
+                            </div>
+                            <p class="text-gray-500 text-sm mb-4">${survey.description || '暂无描述'}</p>
+                            <div class="flex items-center gap-6 text-sm text-gray-500">
+                                <span>📝 ${survey.questions.length} 道题目</span>
+                                <span>📊 ${countData.response_count} 份答卷</span>
+                                <span>🕐 ${new Date(survey.created_at).toLocaleString('zh-CN')}</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2 ml-4">
+                            <a href="/survey/${survey.id}/results" 
+                                class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm text-center transition">
+                                📊 查看结果
+                            </a>
+                            <button onclick="copyLink('${survey.id}')" 
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition">
+                                🔗 复制链接
+                            </button>
+                            <button onclick="toggleSurvey('${survey.id}', ${survey.is_active})" 
+                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm transition">
+                                ${survey.is_active ? '⏸ 关闭' : '▶ 开启'}
+                            </button>
+                            <button onclick="deleteSurvey('${survey.id}')" 
+                                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition">
+                                🗑 删除
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            }
+        }
+
+        function copyLink(surveyId) {
+            const link = window.location.origin + '/survey/' + surveyId;
+            navigator.clipboard.writeText(link).then(() => {
+                alert('问卷链接已复制！');
+            });
+        }
+
+        async function toggleSurvey(surveyId, currentState) {
+            try {
+                await fetch(`/api/surveys/${surveyId}/toggle`, { method: 'PUT' });
+                loadSurveys();
+            } catch (error) {
+                alert('操作失败: ' + error.message);
+            }
+        }
+
+        async function deleteSurvey(surveyId) {
+            if (!confirm('确定要删除此问卷吗？此操作不可撤销。')) return;
+            
+            try {
+                await fetch(`/api/surveys/${surveyId}`, { method: 'DELETE' });
+                loadSurveys();
+            } catch (error) {
+                alert('删除失败: ' + error.message);
+            }
+        }
+
+        loadSurveys();
+    </script>
+</body>
+</html>

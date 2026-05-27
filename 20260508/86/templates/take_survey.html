@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>填写问卷</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <div id="loading" class="text-center py-20">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p class="text-gray-600">加载问卷中...</p>
+        </div>
+
+        <div id="surveyContainer" class="hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h1 id="surveyTitle" class="text-2xl font-bold text-gray-800 mb-2"></h1>
+                <p id="surveyDescription" class="text-gray-600"></p>
+            </div>
+
+            <div id="questionsContainer" class="space-y-4"></div>
+
+            <div class="bg-white rounded-lg shadow-lg p-6 mt-6">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">您的昵称（可选）</label>
+                    <input type="text" id="respondentId" placeholder="留空则匿名"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button onclick="submitSurvey()" 
+                    class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition">
+                    提交答卷
+                </button>
+            </div>
+        </div>
+
+        <div id="successMessage" class="hidden">
+            <div class="bg-white rounded-lg shadow-lg p-8 text-center">
+                <div class="text-6xl mb-4">✅</div>
+                <h2 class="text-2xl font-bold text-green-600 mb-4">提交成功！</h2>
+                <p class="text-gray-600 mb-6">感谢您参与本次问卷调查</p>
+                <button onclick="window.location.reload()" 
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition">
+                    重新填写
+                </button>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="hidden">
+            <div class="bg-white rounded-lg shadow-lg p-8 text-center">
+                <div class="text-6xl mb-4">❌</div>
+                <h2 class="text-2xl font-bold text-red-600 mb-4">出错了</h2>
+                <p id="errorText" class="text-gray-600"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const surveyId = window.location.pathname.split('/')[2];
+        let surveyData = null;
+
+        async function loadSurvey() {
+            try {
+                const response = await fetch(`/api/surveys/${surveyId}`);
+                if (!response.ok) throw new Error('问卷不存在');
+                
+                surveyData = await response.json();
+                
+                if (!surveyData.is_active) {
+                    showError('问卷已关闭');
+                    return;
+                }
+
+                document.getElementById('surveyTitle').textContent = surveyData.title;
+                document.getElementById('surveyDescription').textContent = surveyData.description || '暂无描述';
+                
+                renderQuestions();
+                
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('surveyContainer').classList.remove('hidden');
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+
+            surveyData.questions.forEach((question, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white rounded-lg shadow-lg p-6';
+                
+                const requiredMark = question.required ? '<span class="text-red-500">*</span>' : '';
+                const typeLabel = question.type === 'single_choice' ? '单选题' : '多选题';
+                
+                let optionsHtml = '';
+                question.options.forEach(option => {
+                    const inputType = question.type === 'single_choice' ? 'radio' : 'checkbox';
+                    const inputName = question.type === 'single_choice' ? `q-${question.id}` : `q-${question.id}`;
+                    
+                    optionsHtml += `
+                        <label class="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition">
+                            <input type="${inputType}" name="${inputName}" value="${option}" 
+                                class="w-5 h-5 mr-3 text-blue-600" data-question="${question.id}">
+                            <span class="text-gray-700">${option}</span>
+                        </label>
+                    `;
+                });
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            ${index + 1}. ${question.text} ${requiredMark}
+                        </h3>
+                        <span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">${typeLabel}</span>
+                    </div>
+                    <div class="space-y-2">
+                        ${optionsHtml}
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        async function submitSurvey() {
+            const answers = [];
+            
+            for (const question of surveyData.questions) {
+                const selected = [];
+                document.querySelectorAll(`input[data-question="${question.id}"]:checked`).forEach(input => {
+                    selected.push(input.value);
+                });
+
+                if (question.required && selected.length === 0) {
+                    alert(`请回答必答题: ${question.text}`);
+                    return;
+                }
+
+                answers.push({
+                    question_id: question.id,
+                    selected_options: selected
+                });
+            }
+
+            const respondentId = document.getElementById('respondentId').value.trim() || null;
+
+            try {
+                const response = await fetch('/api/responses/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        survey_id: surveyId,
+                        respondent_id: respondentId,
+                        answers: answers
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '提交失败');
+                }
+
+                document.getElementById('surveyContainer').classList.add('hidden');
+                document.getElementById('successMessage').classList.remove('hidden');
+            } catch (error) {
+                alert('提交失败: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+        }
+
+        loadSurvey();
+    </script>
+</body>
+</html>

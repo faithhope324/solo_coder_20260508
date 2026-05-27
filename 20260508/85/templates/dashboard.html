@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>餐饮业顾客满意度分析</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo">
+                    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                        <circle cx="18" cy="18" r="18" fill="url(#logo-gradient)"/>
+                        <path d="M12 24V12h4c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2h-2v6h-2zm8 0V12h6v2h-4v2h2c1.1 0 2 .9 2 2v4c0 1.1-.9 2-2 2h-6v-2h6v-4h-6" fill="white"/>
+                        <defs>
+                            <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FF6B35"/>
+                                <stop offset="100%" style="stop-color:#FF8C42"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="header-title">
+                    <h1>餐饮业顾客满意度分析</h1>
+                    <p>Customer Satisfaction Analysis</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="date-filter">
+                    <div class="filter-group">
+                        <label>开始日期</label>
+                        <input type="date" id="startDate" class="date-input">
+                    </div>
+                    <div class="filter-group">
+                        <label>结束日期</label>
+                        <input type="date" id="endDate" class="date-input">
+                    </div>
+                    <button id="applyFilter" class="btn-filter">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M6 10.5V7.5L2 3h12l-4 4.5V13L6 10.5Z"/>
+                        </svg>
+                        应用筛选
+                    </button>
+                    <button id="resetFilter" class="btn-reset">重置</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="date-range-banner" id="dateRangeBanner" style="display:none;">
+            <span>当前筛选：</span>
+            <span id="dateRangeText"></span>
+        </div>
+
+        <main class="main-content">
+            <section class="overview-section" id="overviewSection">
+                <div class="section-header">
+                    <h2>数据概览</h2>
+                    <span class="section-subtitle" id="dataSummary"></span>
+                </div>
+                <div class="overview-cards">
+                    <div class="stat-card" data-animation="fade-up" style="animation-delay:0ms">
+                        <div class="card-icon card-icon-rating">
+                            <svg width="28" height="28" viewBox="0 0 28 28" fill="currentColor">
+                                <path d="M14 2l3.5 10.5H28l-9 6.5 3.5 10.5L14 22.5 5.5 29.5 9 19l-9-6.5h10.5z"/>
+                            </svg>
+                        </div>
+                        <div class="card-content">
+                            <span class="card-label">平均评分</span>
+                            <span class="card-value" id="avgRating">--</span>
+                            <span class="card-trend" id="ratingTrend"></span>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-animation="fade-up" style="animation-delay:100ms">
+                        <div class="card-icon card-icon-count">
+                            <svg width="28" height="28" viewBox="0 0 28 28" fill="currentColor">
+                                <path d="M14 2C7.4 2 2 7.4 2 14s5.4 12 12 12 12-5.4 12-12S20.6 2 14 2zm0 22c-5.5 0-10-4.5-10-10S8.5 4 14 4s10 4.5 10 10-4.5 10-10 10zm-1-14h2v6h-2zm0 8h2v2h-2z"/>
+                            </svg>
+                        </div>
+                        <div class="card-content">
+                            <span class="card-label">评价总数</span>
+                            <span class="card-value" id="totalReviews">--</span>
+                            <span class="card-trend">条记录</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-animation="fade-up" style="animation-delay:200ms">
+                        <div class="card-icon card-icon-wait">
+                            <svg width="28" height="28" viewBox="0 0 28 28" fill="currentColor">
+                                <path d="M14 2C7.4 2 2 7.4 2 14s5.4 12 12 12 12-5.4 12-12S20.6 2 14 2zm1 17h-2v-6l5 3 .9-1.4-3.9-2.3V19z"/>
+                            </svg>
+                        </div>
+                        <div class="card-content">
+                            <span class="card-label">平均等待</span>
+                            <span class="card-value"><span id="avgWaitTime">--</span><small>分钟</small></span>
+                            <span class="card-trend"></span>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-animation="fade-up" style="animation-delay:300ms">
+                        <div class="card-icon card-icon-taste">
+                            <svg width="28" height="28" viewBox="0 0 28 28" fill="currentColor">
+                                <path d="M14 2C7.4 2 2 7.4 2 14s5.4 12 12 12 12-5.4 12-12S20.6 2 14 2zm1 17h-2v-2h2v2zm0-4h-2V7h2v8z"/>
+                            </svg>
+                        </div>
+                        <div class="card-content">
+                            <span class="card-label">口味/服务</span>
+                            <span class="card-value">
+                                <span id="avgTaste">--</span> / <span id="avgService">--</span>
+                            </span>
+                            <span class="card-trend"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rating-distribution" id="ratingDistribution">
+                    <div class="section-header">
+                        <h3>评分分布</h3>
+                    </div>
+                    <div class="distribution-bars" id="distributionBars"></div>
+                </div>
+            </section>
+
+            <section class="analysis-section">
+                <div class="analysis-grid">
+                    <div class="analysis-card heatmap-card" data-animation="fade-up" style="animation-delay:400ms">
+                        <div class="card-header">
+                            <h2>相关性热力图</h2>
+                            <span class="card-desc">各因素与总体评分的皮尔逊相关系数</span>
+                        </div>
+                        <div id="heatmapChart" class="chart-container"></div>
+                        <div class="correlation-insights" id="correlationInsights"></div>
+                    </div>
+                    <div class="analysis-card wordcloud-card" data-animation="fade-up" style="animation-delay:500ms">
+                        <div class="card-header">
+                            <h2>评论词云分析</h2>
+                            <span class="card-desc">顾客评论文本关键词可视化</span>
+                        </div>
+                        <div class="wordcloud-container">
+                            <div id="wordcloudImage" class="wordcloud-image">
+                                <div class="loading-spinner"></div>
+                            </div>
+                        </div>
+                        <div class="word-stats">
+                            <div class="word-stat-item">
+                                <span class="stat-label">总词汇数</span>
+                                <span class="stat-value" id="totalWords">--</span>
+                            </div>
+                            <div class="word-stat-item">
+                                <span class="stat-label">独立词汇</span>
+                                <span class="stat-value" id="uniqueWords">--</span>
+                            </div>
+                        </div>
+                        <div class="top-words">
+                            <h4>热门关键词</h4>
+                            <div class="word-tags" id="wordTags"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="data-section" data-animation="fade-up" style="animation-delay:600ms">
+                <div class="section-header">
+                    <h2>原始数据</h2>
+                    <div class="pagination-info" id="paginationInfo"></div>
+                </div>
+                <div class="data-table-container">
+                    <table class="data-table" id="dataTable">
+                        <colgroup>
+                            <col style="width: 70px;">
+                            <col style="width: 110px;">
+                            <col style="width: 70px;">
+                            <col style="width: 90px;">
+                            <col style="width: 70px;">
+                            <col style="width: 70px;">
+                            <col>
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>评价ID</th>
+                                <th>日期</th>
+                                <th>评分</th>
+                                <th>等待时间</th>
+                                <th>口味</th>
+                                <th>服务</th>
+                                <th>评论</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <tr><td colspan="7" class="loading-cell">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination">
+                    <button id="prevPage" class="btn-page">上一页</button>
+                    <span id="pageIndicator">第 1 页</span>
+                    <button id="nextPage" class="btn-page">下一页</button>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <p>餐饮业顾客满意度分析系统 &copy; 2024 | 数据驱动的餐饮洞察</p>
+        </footer>
+    </div>
+
+    <div id="wordModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalWordTitle">关键词详情</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ poll.title }} - 投票结果{% endblock %}
+
+{% block content %}
+<h2 class="mb-3">{{ poll.title }} - 投票结果</h2>
+<p class="text-muted">总投票数: {{ stats.total_votes }} 票</p>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <a href="{% url 'poll_detail' poll.id %}" class="btn btn-outline-primary">返回投票</a>
+        {% if user.is_authenticated and user == poll.creator %}
+            <button class="btn btn-outline-info" onclick="refreshStats()">刷新数据</button>
+        {% endif %}
+    </div>
+    <div class="col-md-6 text-end">
+        <span id="lastUpdate">最后更新: {% now "Y-m-d H:i:s" %}</span>
+    </div>
+</div>
+
+{% for question in stats.questions %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">{{ question.order|add:1 }}. {{ question.text }}</h5>
+        <small>总票数: {{ question.total_votes }} 票</small>
+    </div>
+    <div class="card-body">
+        {% for option in question.options %}
+            <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <span>{{ option.text }}</span>
+                    <span>{{ option.count }} 票 ({{ option.percentage }}%)</span>
+                </div>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ option.percentage }}%;">
+                        {{ option.percentage }}%
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+{% if poll.collect_location and stats.by_location %}
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">按地区分组统计</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for location, data in stats.by_location.items %}
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ location }}</h6>
+                        <p class="card-text">投票人数: {{ data.count }}</p>
+                        <ul class="list-unstyled small">
+                            {% for option, count in data.options.items %}
+                                <li>{{ option }}: {{ count }} 票</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if poll.collect_age and stats.by_age_group %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">按年龄段分组统计</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for age_group, data in stats.by_age_group.items %}
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ age_group }}</h6>
+                        <p class="card-text">投票人数: {{ data.count }}</p>
+                        <ul class="list-unstyled small">
+                            {% for option, count in data.options.items %}
+                                <li>{{ option }}: {{ count }} 票</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshStats() {
+    location.reload();
+}
+
+setInterval(function() {
+    fetch("{% url 'poll_results_api' poll.id %}")
+        .then(response => response.json())
+        .then(data => {
+            updateResults(data);
+        });
+}, 10000);
+
+function updateResults(stats) {
+    document.getElementById('lastUpdate').textContent = '最后更新: ' + new Date().toLocaleString();
+}
+</script>
+{% endblock %}

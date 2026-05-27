@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}创建投票 - 在线投票平台{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">创建投票</h2>
+<form method="post">
+    {% csrf_token %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">{{ form.title.label }}</label>
+                {{ form.title }}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ form.description.label }}</label>
+                {{ form.description }}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ form.poll_type.label }}</label>
+                {{ form.poll_type }}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ form.deadline.label }}</label>
+                {{ form.deadline }}
+                <div class="form-text">可选，留空则不设截止时间</div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-check">
+                        {{ form.require_login }}
+                        <label class="form-check-label">{{ form.require_login.label }}</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        {{ form.collect_location }}
+                        <label class="form-check-label">{{ form.collect_location.label }}</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        {{ form.collect_age }}
+                        <label class="form-check-label">{{ form.collect_age.label }}</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <a href="{% url 'index' %}" class="btn btn-secondary">取消</a>
+        <button type="submit" class="btn btn-primary">下一步：添加问题</button>
+    </div>
+</form>
+{% endblock %}

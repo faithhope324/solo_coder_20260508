@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}添加问题 - {{ poll.title }}{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">添加问题 - {{ poll.title }}</h2>
+
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">当前问题列表</h5>
+    </div>
+    <div class="card-body">
+        {% if poll.questions.all %}
+            {% for question in poll.questions.all %}
+                <div class="mb-3 p-3 bg-light rounded">
+                    <h6>{{ question.order|add:1 }}. {{ question.text }} 
+                        <span class="badge bg-secondary">{{ question.get_question_type_display }}</span>
+                    </h6>
+                    <ul class="list-group list-group-flush">
+                        {% for option in question.options.all %}
+                            <li class="list-group-item">{{ option.order|add:1 }}. {{ option.text }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">暂无问题，请添加第一个问题。</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">添加新问题</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" id="questionForm">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">问题内容</label>
+                <input type="text" name="question_text" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">问题类型</label>
+                <select name="question_type" class="form-select">
+                    <option value="single_choice">单选题</option>
+                    <option value="multiple_choice">多选题</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">选项（至少2个）</label>
+                <div id="optionsContainer">
+                    <div class="input-group mb-2">
+                        <input type="text" name="options[]" class="form-control" placeholder="选项1" required>
+                    </div>
+                    <div class="input-group mb-2">
+                        <input type="text" name="options[]" class="form-control" placeholder="选项2" required>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addOption()">+ 添加选项</button>
+            </div>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <button type="button" class="btn btn-success" onclick="generateQRAndFinish()">生成二维码并完成</button>
+                <button type="submit" class="btn btn-primary">添加问题</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let optionCount = 2;
+
+function addOption() {
+    optionCount++;
+    const container = document.getElementById('optionsContainer');
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" name="options[]" class="form-control" placeholder="选项${optionCount}">
+        <button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()">×</button>
+    `;
+    container.appendChild(div);
+}
+
+function generateQRAndFinish() {
+    fetch("{% url 'generate_qr' poll.id %}")
+        .then(response => response.json())
+        .then(data => {
+            if (data.qr_url) {
+                window.location.href = "{% url 'poll_detail' poll.id %}";
+            }
+        });
+}
+</script>
+{% endblock %}

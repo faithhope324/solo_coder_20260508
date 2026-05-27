@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}我的投票 - 在线投票平台{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">我的投票</h2>
+
+<div class="mb-3">
+    <a href="{% url 'create_poll' %}" class="btn btn-primary">+ 创建新投票</a>
+</div>
+
+{% if polls %}
+<div class="row">
+    {% for poll in polls %}
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ poll.title }}</h5>
+                <p class="card-text text-muted small">{{ poll.description|truncatechars:80 }}</p>
+                <p class="card-text">
+                    <span class="badge bg-primary">{{ poll.get_poll_type_display }}</span>
+                    <span class="badge bg-info">{{ poll.total_votes }} 票</span>
+                    <span class="badge {% if poll.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                        {% if poll.is_active %}启用{% else %}关闭{% endif %}
+                    </span>
+                    {% if poll.is_expired %}
+                        <span class="badge bg-warning">已截止</span>
+                    {% endif %}
+                </p>
+                <div class="d-grid gap-2 d-md-flex">
+                    <a href="{% url 'poll_detail' poll.id %}" class="btn btn-outline-primary btn-sm">查看</a>
+                    <a href="{% url 'poll_results' poll.id %}" class="btn btn-outline-info btn-sm">结果</a>
+                    <a href="{% url 'toggle_poll' poll.id %}" class="btn btn-outline-warning btn-sm">
+                        {% if poll.is_active %}关闭{% else %}启用{% endif %}
+                    </a>
+                    <a href="{% url 'delete_poll' poll.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('确定要删除这个投票吗？')">删除</a>
+                </div>
+            </div>
+            <div class="card-footer text-muted small">
+                创建时间: {{ poll.created_at|date:"Y-m-d H:i" }}
+                {% if poll.deadline %}
+                    <br>截止时间: {{ poll.deadline|date:"Y-m-d H:i" }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <p class="text-muted">您还没有创建任何投票。</p>
+    <a href="{% url 'create_poll' %}" class="btn btn-primary">创建第一个投票</a>
+</div>
+{% endif %}
+{% endblock %}

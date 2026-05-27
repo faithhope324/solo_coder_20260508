@@ -1,0 +1,21 @@
+{
+  "name": "未命名电路",
+  "num_qubits": 3,
+  "num_clbits": 3,
+  "gates": [
+    {
+      "type": "H",
+      "targets": [
+        0
+      ],
+      "controls": []
+    },
+    {
+      "type": "Z",
+      "targets": [
+        1
+      ],
+      "controls": []
+    }
+  ]
+}

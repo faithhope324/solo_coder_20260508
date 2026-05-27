@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>停车场车位预订系统</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; padding: 20px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { margin-bottom: 20px; color: #1a1a2e; }
+  .toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .toolbar input, .toolbar button { padding: 8px 16px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; }
+  .toolbar button { background: #16213e; color: #fff; cursor: pointer; border: none; }
+  .toolbar button:hover { background: #0f3460; }
+  .toolbar button:disabled { background: #aaa; cursor: not-allowed; }
+  .user-info { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+  .user-info span { color: #555; }
+  .grid { display: grid; gap: 8px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .spot { aspect-ratio: 1.3; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-weight: 600; transition: transform .15s, box-shadow .15s; user-select: none; }
+  .spot:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .spot.free { background: #52c41a; color: #fff; }
+  .spot.reserved { background: #faad14; color: #fff; }
+  .spot.occupied { background: #f5222d; color: #fff; }
+  .spot .label { font-size: 12px; opacity: 0.9; }
+  .spot .countdown { font-size: 11px; margin-top: 2px; }
+  .info-panel { margin-top: 20px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .info-panel h3 { margin-bottom: 12px; color: #16213e; }
+  .order-list { margin-top: 12px; }
+  .order-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+  .order-item:last-child { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+  .badge.free { background: #f6ffed; color: #52c41a; }
+  .badge.reserved { background: #fffbe6; color: #faad14; }
+  .badge.occupied { background: #fff1f0; color: #f5222d; }
+  .badge.completed { background: #e6f7ff; color: #1890ff; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 12px; }
+  .stat-card { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; padding: 20px; border-radius: 10px; }
+  .stat-card .label { font-size: 13px; opacity: 0.8; }
+  .stat-card .value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+  .toast { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 6px; color: #fff; z-index: 1000; animation: slideIn .3s; }
+  .toast.success { background: #52c41a; }
+  .toast.error { background: #f5222d; }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .tab-bar { display: flex; gap: 0; margin-bottom: 16px; }
+  .tab-bar button { padding: 10px 20px; border: none; background: #f0f0f0; cursor: pointer; font-size: 14px; }
+  .tab-bar button.active { background: #16213e; color: #fff; }
+  .tab-bar button:first-child { border-radius: 6px 0 0 6px; }
+  .tab-bar button:last-child { border-radius: 0 6px 6px 0; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🅿️ 停车场车位预订系统</h1>
+
+  <div class="toolbar">
+    <div id="auth-section">
+      <input type="text" id="username" placeholder="用户名" />
+      <input type="password" id="password" placeholder="密码" />
+      <button onclick="register()">注册</button>
+      <button onclick="login()">登录</button>
+    </div>
+    <div id="user-section" class="user-info hidden">
+      <span id="user-display"></span>
+      <button onclick="logout()">退出</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="active" onclick="switchTab('map')">车位地图</button>
+    <button onclick="switchTab('orders')">我的订单</button>
+    <button id="admin-tab-btn" class="hidden" onclick="switchTab('admin')">管理后台</button>
+  </div>
+
+  <div id="tab-map">
+    <div class="grid" id="parking-grid"></div>
+  </div>
+
+  <div id="tab-orders" class="hidden">
+    <div class="info-panel">
+      <h3>我的订单</h3>
+      <div id="order-list" class="order-list"></div>
+    </div>
+  </div>
+
+  <div id="tab-admin" class="hidden">
+    <div class="info-panel">
+      <h3>收入统计</h3>
+      <div class="stats" id="admin-stats"></div>
+      <h3 style="margin-top:24px">全部订单</h3>
+      <div id="admin-order-list" class="order-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = "http://localhost:8000";
+let token = localStorage.getItem("token") || "";
+let currentUser = null;
+let ws = null;
+const GRID_ROWS = 5;
+const GRID_COLS = 10;
+
+function headers() {
+  return token ? { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
+}
+
+function toast(msg, type = "success") {
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+function switchTab(name) {
+  ["map","orders","admin"].forEach(t => document.getElementById("tab-"+t).classList.add("hidden"));
+  document.getElementById("tab-"+name).classList.remove("hidden");
+  document.querySelectorAll(".tab-bar button").forEach(b => b.classList.remove("active"));
+  event.target.classList.add("active");
+  if (name === "orders") loadOrders();
+  if (name === "admin") loadAdmin();
+}
+
+async function register() {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value;
+  if (!username || !password) return toast("请输入用户名和密码", "error");
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/register`, {
+      method: "POST", headers: headers(),
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (res.ok) { toast("注册成功，请登录"); }
+    else { toast(data.detail || "注册失败", "error"); }
+  } catch(e) { toast("网络错误", "error"); }
+}
+
+async function login() {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value;
+  if (!username || !password) return toast("请输入用户名和密码", "error");
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      token = data.access_token;
+      localStorage.setItem("token", token);
+      await fetchMe();
+      updateAuthUI();
+      toast("登录成功");
+      connectWS();
+    } else { toast(data.detail || "登录失败", "error"); }
+  } catch(e) { toast("网络错误", "error"); }
+}
+
+function logout() {
+  token = "";
+  currentUser = null;
+  localStorage.removeItem("token");
+  if (ws) { ws.close(); ws = null; }
+  updateAuthUI();
+  toast("已退出");
+}
+
+async function fetchMe() {
+  if (!token) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/me`, { headers: headers() });
+    if (res.ok) currentUser = await res.json();
+  } catch(e) {}
+}
+
+function updateAuthUI() {
+  if (token && currentUser) {
+    document.getElementById("auth-section").classList.add("hidden");
+    document.getElementById("user-section").classList.remove("hidden");
+    document.getElementById("user-display").textContent = `${currentUser.username} (${currentUser.role})`;
+    if (currentUser.role === "admin") {
+      document.getElementById("admin-tab-btn").classList.remove("hidden");
+    }
+  } else {
+    document.getElementById("auth-section").classList.remove("hidden");
+    document.getElementById("user-section").classList.add("hidden");
+    document.getElementById("admin-tab-btn").classList.add("hidden");
+  }
+}
+
+async function loadSpots() {
+  try {
+    const res = await fetch(`${API_BASE}/api/parking/spots`);
+    const spots = await res.json();
+    renderGrid(spots);
+  } catch(e) { console.error(e); }
+}
+
+function renderGrid(spots) {
+  const grid = document.getElementById("parking-grid");
+  grid.style.gridTemplateColumns = `repeat(${GRID_COLS}, 1fr)`;
+  grid.innerHTML = "";
+  const now = Date.now() / 1000;
+  spots.forEach(spot => {
+    const div = document.createElement("div");
+    div.className = `spot ${spot.status}`;
+    let content = `<div class="label">${spot.spot_id}</div>`;
+    if (spot.status === "reserved" && spot.expires_at) {
+      const remaining = Math.max(0, Math.ceil(spot.expires_at - now));
+      const mm = Math.floor(remaining / 60), ss = remaining % 60;
+      content += `<div class="countdown">${mm}:${String(ss).padStart(2,'0')}</div>`;
+    } else if (spot.status === "free") {
+      content += `<div class="label">空闲</div>`;
+    } else if (spot.status === "occupied") {
+      content += `<div class="label">占用中</div>`;
+    }
+    div.innerHTML = content;
+    div.onclick = () => handleSpotClick(spot);
+    grid.appendChild(div);
+  });
+}
+
+async function handleSpotClick(spot) {
+  if (!token) return toast("请先登录", "error");
+  if (spot.status === "free") {
+    if (confirm(`预订车位 ${spot.spot_id}？（30分钟内确认停车，超时自动释放）`)) {
+      try {
+        const res = await fetch(`${API_BASE}/api/reservation/reserve`, {
+          method: "POST", headers: headers(),
+          body: JSON.stringify({ spot_id: spot.spot_id })
+        });
+        const data = await res.json();
+        if (res.ok) { toast("预订成功！30分钟内确认停车"); loadSpots(); }
+        else { toast(data.detail || "预订失败", "error"); }
+      } catch(e) { toast("网络错误", "error"); }
+    }
+  } else if (spot.status === "reserved" && spot.user_id === String(currentUser.id)) {
+    if (confirm(`确认停入车位 ${spot.spot_id}？`)) {
+      try {
+        const res = await fetch(`${API_BASE}/api/reservation/confirm`, {
+          method: "POST", headers: headers(),
+          body: JSON.stringify({ spot_id: spot.spot_id })
+        });
+        if (res.ok) { toast("已确认停车"); loadSpots(); }
+        else { const d = await res.json(); toast(d.detail || "操作失败", "error"); }
+      } catch(e) { toast("网络错误", "error"); }
+    }
+  } else if (spot.status === "occupied" && spot.user_id === String(currentUser.id)) {
+    if (confirm(`离开车位 ${spot.spot_id} 并结算？`)) {
+      try {
+        const res = await fetch(`${API_BASE}/api/reservation/leave`, {
+          method: "POST", headers: headers(),
+          body: JSON.stringify({ spot_id: spot.spot_id })
+        });
+        const data = await res.json();
+        if (res.ok) { toast(`已离开，费用: ¥${data.amount}`); loadSpots(); }
+        else { toast(data.detail || "操作失败", "error"); }
+      } catch(e) { toast("网络错误", "error"); }
+    }
+  } else {
+    toast(`此车位状态: ${spot.status === "reserved" ? "已预订" : "占用中"}`, "error");
+  }
+}
+
+async function loadOrders() {
+  if (!token) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/orders`, { headers: headers() });
+    const orders = await res.json();
+    const container = document.getElementById("order-list");
+    container.innerHTML = orders.length ? "" : "<div>暂无订单</div>";
+    orders.forEach(o => {
+      const div = document.createElement("div");
+      div.className = "order-item";
+      div.innerHTML = `
+        <span>订单 #${o.id} | 车位: <b>${o.spot_id}</b></span>
+        <span><span class="badge ${o.status}">${o.status}</span> | ¥${o.amount} | ${o.duration_minutes}分钟</span>
+      `;
+      container.appendChild(div);
+    });
+  } catch(e) { console.error(e); }
+}
+
+async function loadAdmin() {
+  if (!token) return;
+  try {
+    const [statsRes, ordersRes] = await Promise.all([
+      fetch(`${API_BASE}/api/admin/revenue`, { headers: headers() }),
+      fetch(`${API_BASE}/api/admin/orders`, { headers: headers() })
+    ]);
+    const stats = await statsRes.json();
+    const orders = await ordersRes.json();
+
+    document.getElementById("admin-stats").innerHTML = `
+      <div class="stat-card"><div class="label">总收入</div><div class="value">¥${stats.total_revenue}</div></div>
+      <div class="stat-card"><div class="label">总订单数</div><div class="value">${stats.total_orders}</div></div>
+      <div class="stat-card"><div class="label">今日收入</div><div class="value">¥${stats.today_revenue}</div></div>
+      <div class="stat-card"><div class="label">今日订单</div><div class="value">${stats.today_orders}</div></div>
+    `;
+
+    const container = document.getElementById("admin-order-list");
+    container.innerHTML = orders.length ? "" : "<div>暂无订单</div>";
+    orders.forEach(o => {
+      const div = document.createElement("div");
+      div.className = "order-item";
+      div.innerHTML = `
+        <span>#${o.id} | 用户ID: ${o.user_id} | 车位: <b>${o.spot_id}</b></span>
+        <span><span class="badge ${o.status}">${o.status}</span> | ¥${o.amount} | ${o.duration_minutes}分钟</span>
+      `;
+      container.appendChild(div);
+    });
+  } catch(e) { console.error(e); }
+}
+
+function connectWS() {
+  if (ws) return;
+  try {
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    ws = new WebSocket(`${proto}://localhost:8000/ws/parking`);
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === "spot_update") loadSpots();
+    };
+    ws.onclose = () => { ws = null; setTimeout(connectWS, 3000); };
+    ws.onerror = () => { if (ws) ws.close(); };
+  } catch(e) { console.error(e); }
+}
+
+async function init() {
+  if (token) { await fetchMe(); }
+  updateAuthUI();
+  loadSpots();
+  connectWS();
+  setInterval(loadSpots, 5000);
+}
+
+init();
+</script>
+</body>
+</html>

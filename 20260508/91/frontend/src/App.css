@@ -1,0 +1,618 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #1e293b 0%, #4f46e5 100%);
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.app-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.circuit-name-input {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 0.9rem;
+  width: 180px;
+}
+
+.circuit-name-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.circuit-name-input:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+  background: #10b981;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #059669;
+}
+
+.btn-save {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-save:hover {
+  background: #2563eb;
+}
+
+.btn-clear {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-clear:hover {
+  background: #4b5563;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 280px;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.gate-palette h3,
+.qubit-controls h3,
+.circuit-manager h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+}
+
+.palette-hint {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.gate-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.gate-item {
+  padding: 0.75rem 0.5rem;
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+  cursor: grab;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.gate-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.gate-item:active {
+  cursor: grabbing;
+}
+
+.gate-symbol {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.gate-label {
+  display: block;
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+  opacity: 0.9;
+}
+
+.qubit-controls {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.5rem;
+}
+
+.qubit-count-display {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #4f46e5;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.qubit-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.qubit-buttons button {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 6px;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.qubit-buttons button:hover:not(:disabled) {
+  background: #d1d5db;
+}
+
+.qubit-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.circuit-manager {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-refresh {
+  background: none;
+  font-size: 1.1rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh:hover {
+  background: #e5e7eb;
+}
+
+.loading,
+.no-circuits {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.85rem;
+  padding: 1rem 0;
+}
+
+.circuit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.circuit-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.circuit-item:hover {
+  background: #f1f5f9;
+  border-color: #e5e7eb;
+}
+
+.circuit-item.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.circuit-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.circuit-name {
+  font-weight: 500;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.circuit-meta {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.125rem;
+}
+
+.circuit-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.btn-load,
+.btn-delete {
+  background: none;
+  font-size: 0.9rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-load:hover {
+  background: #dbeafe;
+}
+
+.btn-delete:hover {
+  background: #fee2e2;
+}
+
+.circuit-area {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.circuit-editor {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.circuit-editor h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 1rem;
+}
+
+.circuit-grid-wrapper {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.circuit-svg {
+  display: block;
+  min-width: 100%;
+}
+
+.qubit-label {
+  font-size: 12px;
+  font-weight: 600;
+  fill: #374151;
+}
+
+.wire-line {
+  stroke: #94a3b8;
+  stroke-width: 2;
+}
+
+.grid-cell {
+  fill: transparent;
+  stroke: #e5e7eb;
+  stroke-width: 1;
+  stroke-dasharray: 4;
+  transition: all 0.2s ease;
+}
+
+.grid-cell.drag-over {
+  fill: #dbeafe;
+  stroke: #3b82f6;
+  stroke-width: 2;
+}
+
+.gate-rect {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.gate-rect:hover {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) brightness(1.1);
+}
+
+.gate-text {
+  fill: white;
+  font-size: 16px;
+  font-weight: 700;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.cnot-connection {
+  stroke: #0891b2;
+  stroke-width: 2;
+}
+
+.cnot-control {
+  fill: #0891b2;
+  cursor: pointer;
+}
+
+.cnot-control:hover {
+  fill: #0e7490;
+}
+
+.cnot-target {
+  fill: white;
+  stroke: #0891b2;
+  stroke-width: 2;
+  cursor: pointer;
+}
+
+.cnot-target:hover {
+  stroke: #0e7490;
+  stroke-width: 3;
+}
+
+.cnot-plus {
+  stroke: #0891b2;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.editor-hint {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.results-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.task-status h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 1rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-running {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.result-panel {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.result-panel h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.probability-chart {
+  width: 100%;
+}
+
+.bloch-sphere-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bloch-sphere-canvas {
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.bloch-sphere-canvas:active {
+  cursor: grabbing;
+}
+
+.bloch-coords {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.75rem;
+  font-family: 'Courier New', monospace;
+}
+
+.no-data {
+  text-align: center;
+  color: #94a3b8;
+  padding: 2rem 0;
+}
+
+.bloch-spheres-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.bloch-sphere-item {
+  text-align: center;
+}
+
+.bloch-sphere-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  min-width: 320px;
+  max-width: 480px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.2rem;
+  color: #1e293b;
+}
+
+.modal-hint {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.control-qubit-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.qubit-option {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.qubit-option:hover:not(:disabled) {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.qubit-option.selected {
+  border-color: #10b981;
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.qubit-option.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f3f4f6;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    max-height: 300px;
+  }
+
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+}

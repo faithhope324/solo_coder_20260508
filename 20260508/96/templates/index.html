@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>酒店入住率分析</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #1f2937;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 24px 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .header p {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .filter-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .filter-bar label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #374151;
+        }
+        .filter-bar select {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #374151;
+            background: white;
+            cursor: pointer;
+            min-width: 160px;
+        }
+        .filter-bar select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+        .filter-bar button {
+            padding: 8px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .filter-bar button:hover {
+            background: #2563eb;
+        }
+        .filter-bar a {
+            padding: 8px 20px;
+            background: #f3f4f6;
+            color: #374151;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .filter-bar a:hover {
+            background: #e5e7eb;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .summary-card .label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .summary-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e40af;
+        }
+        .summary-card .unit {
+            font-size: 14px;
+            font-weight: 400;
+            color: #6b7280;
+            margin-left: 4px;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .chart-full {
+            grid-column: 1 / -1;
+        }
+        .tables-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+        .table-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1f2937;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th {
+            background: #f9fafb;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #4b5563;
+        }
+        tr:hover td {
+            background: #f9fafb;
+        }
+        @media (max-width: 768px) {
+            .summary-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-grid { grid-template-columns: 1fr; }
+            .tables-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏨 酒店入住率分析</h1>
+        <p>实时监控入住率、渠道贡献与淡旺季趋势</p>
+    </div>
+
+    <div class="container">
+        <div class="filter-bar">
+            <label>📅 选择月份：</label>
+            <form method="get" action="/" style="display:flex; gap:12px; align-items:center;">
+                <select name="month">
+                    <option value="">全部月份</option>
+                    {% for m in available_months %}
+                    <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit">筛选</button>
+                <a href="/">重置</a>
+            </form>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="label">总订单数</div>
+                <div class="value">{{ summary.total_orders }}<span class="unit">单</span></div>
+            </div>
+            <div class="summary-card">
+                <div class="label">平均入住时长</div>
+                <div class="value">{{ summary.avg_stay }}<span class="unit">天</span></div>
+            </div>
+            <div class="summary-card">
+                <div class="label">平均入住率</div>
+                <div class="value">{{ summary.avg_occupancy }}<span class="unit">%</span></div>
+            </div>
+            <div class="summary-card">
+                <div class="label">总收入</div>
+                <div class="value">¥{{ "{:,.0f}".format(summary.total_revenue) }}</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card chart-full">
+                <div id="chart-occupancy"></div>
+            </div>
+            <div class="chart-card chart-full">
+                <div id="chart-channel-trend"></div>
+            </div>
+            <div class="chart-card chart-full">
+                <div id="chart-season"></div>
+            </div>
+            <div class="chart-card">
+                <div id="chart-channel-pie"></div>
+            </div>
+            <div class="chart-card">
+                <div id="chart-room-type"></div>
+            </div>
+            <div class="chart-card chart-full">
+                <div id="chart-avg-stay"></div>
+            </div>
+        </div>
+
+        <div class="tables-grid">
+            <div class="table-card">
+                <h3>📊 渠道贡献明细</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>渠道</th>
+                            <th>订单数</th>
+                            <th>订单占比</th>
+                            <th>收入</th>
+                            <th>收入占比</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in channel_stats %}
+                        <tr>
+                            <td>{{ row['渠道'] }}</td>
+                            <td>{{ row['订单数'] }}</td>
+                            <td>{{ row['订单占比'] }}%</td>
+                            <td>¥{{ "{:,.0f}".format(row['收入']) }}</td>
+                            <td>{{ row['收入占比'] }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-card">
+                <h3>🛏️ 房间类型统计</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>房间类型</th>
+                            <th>订单数</th>
+                            <th>平均价格</th>
+                            <th>平均入住天数</th>
+                            <th>总收入</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in room_stats %}
+                        <tr>
+                            <td>{{ row['房间类型'] }}</td>
+                            <td>{{ row['订单数'] }}</td>
+                            <td>¥{{ row['平均价格'] }}</td>
+                            <td>{{ row['平均入住天数'] }}天</td>
+                            <td>¥{{ "{:,.0f}".format(row['总收入']) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var charts = {{ charts | tojson }};
+        Plotly.newPlot('chart-occupancy', charts.occupancy.data, charts.occupancy.layout, {responsive: true});
+        Plotly.newPlot('chart-channel-trend', charts.channel_trend.data, charts.channel_trend.layout, {responsive: true});
+        Plotly.newPlot('chart-season', charts.season.data, charts.season.layout, {responsive: true});
+        Plotly.newPlot('chart-channel-pie', charts.channel_pie.data, charts.channel_pie.layout, {responsive: true});
+        Plotly.newPlot('chart-room-type', charts.room_type.data, charts.room_type.layout, {responsive: true});
+        Plotly.newPlot('chart-avg-stay', charts.avg_stay.data, charts.avg_stay.layout, {responsive: true});
+    </script>
+</body>
+</html>

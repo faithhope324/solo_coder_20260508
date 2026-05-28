@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商退货原因分析</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --accent-light: #ebf5fb;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --text-light: #7f8c8d;
+            --radius: 12px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+                         'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #34495e 100%);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.15);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            margin-top: 8px;
+            font-size: 1rem;
+            opacity: 0.85;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover { transform: translateY(-3px); }
+
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        .stat-card:nth-child(1) .stat-value { color: var(--accent); }
+        .stat-card:nth-child(2) .stat-value { color: var(--success); }
+        .stat-card:nth-child(3) .stat-value { color: var(--warning); }
+        .stat-card:nth-child(4) .stat-value { color: var(--danger); }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-card h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-light);
+            color: var(--primary);
+        }
+
+        .chart-card h2 .icon {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            border-radius: 6px;
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .chart-img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .cross-section {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 28px;
+        }
+
+        .cross-section h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-light);
+            color: var(--primary);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filter-group label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .filter-group select {
+            padding: 8px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--text);
+            background: white;
+            cursor: pointer;
+            min-width: 140px;
+            transition: border-color 0.2s;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn {
+            padding: 8px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .cross-result {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 16px;
+        }
+
+        .cross-result .info-panel {
+            background: var(--accent-light);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .cross-result .info-panel h3 {
+            font-size: 1rem;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+
+        .cross-result .info-panel .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            font-size: 0.9rem;
+        }
+
+        .cross-result .info-panel .info-item:last-child { border-bottom: none; }
+
+        .cross-result .info-panel .info-item .val {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .matrix-section {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 28px;
+        }
+
+        .matrix-section h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-light);
+            color: var(--primary);
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        .matrix-table th, .matrix-table td {
+            padding: 12px 16px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .matrix-table thead th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .matrix-table thead th:first-child {
+            background: #34495e;
+        }
+
+        .matrix-table tbody td {
+            border-bottom: 1px solid #eee;
+        }
+
+        .matrix-table tbody td:first-child {
+            background: var(--accent-light);
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .matrix-table tbody tr:hover td {
+            background: #fafafa;
+        }
+
+        .matrix-table tbody tr:hover td:first-child {
+            background: #d4e6f1;
+        }
+
+        .reason-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #eafaf1;
+            color: var(--success);
+        }
+
+        .count-badge {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .cross-result { grid-template-columns: 1fr; }
+            .filter-row { flex-direction: column; }
+            .header h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>📊 电商退货原因分析</h1>
+    <p>数据期间：{{ summary.date_range.start }} ~ {{ summary.date_range.end }}</p>
+</div>
+
+<div class="container">
+
+    <div class="stats-bar">
+        <div class="stat-card">
+            <div class="stat-value">{{ summary.total_records }}</div>
+            <div class="stat-label">退货订单数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ summary.total_quantity }}</div>
+            <div class="stat-label">退货商品件数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ summary.categories|length }}</div>
+            <div class="stat-label">产品类别数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ summary.reasons|length }}</div>
+            <div class="stat-label">退货原因数</div>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card full-width">
+            <h2><span class="icon" style="background:#ebf5fb;color:#3498db;">☁</span> 退货原因词云</h2>
+            <img class="chart-img" src="data:image/png;base64,{{ wordcloud_img }}" alt="退货原因词云">
+        </div>
+        <div class="chart-card">
+            <h2><span class="icon" style="background:#eafaf1;color:#27ae60;">📊</span> 各品类退货率</h2>
+            <img class="chart-img" src="data:image/png;base64,{{ category_img }}" alt="各品类退货率条形图">
+        </div>
+        <div class="chart-card">
+            <h2><span class="icon" style="background:#fef9e7;color:#f39c12;">🥧</span> 价格区间退货占比</h2>
+            <img class="chart-img" src="data:image/png;base64,{{ price_img }}" alt="价格区间退货占比饼图">
+        </div>
+    </div>
+
+    <div class="cross-section">
+        <h2><span class="icon" style="background:#fdedec;color:#e74c3c;">🔍</span> 交叉分析</h2>
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>购买季节</label>
+                <select id="filter-season">
+                    <option value="">全部季节</option>
+                    {% for s in seasons %}
+                    <option value="{{ s }}">{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>产品类别</label>
+                <select id="filter-category">
+                    <option value="">全部类别</option>
+                    {% for c in categories %}
+                    <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="doCrossAnalysis()">分析</button>
+        </div>
+
+        <div id="cross-result" class="cross-result">
+            <div>
+                <img id="cross-chart" class="chart-img"
+                     src="data:image/png;base64,{{ cross_img }}" alt="交叉分析图">
+            </div>
+            <div class="info-panel">
+                <h3>📈 分析结果</h3>
+                <div class="info-item">
+                    <span>筛选条件</span>
+                    <span class="val" id="info-filter">
+                        {% if cross_data.filters.season %}{{ cross_data.filters.season }}{% endif %}
+                        {% if cross_data.filters.category %} / {{ cross_data.filters.category }}{% endif %}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span>退货订单数</span>
+                    <span class="val" id="info-records">{{ cross_data.total_records }}</span>
+                </div>
+                <div class="info-item">
+                    <span>退货商品件数</span>
+                    <span class="val" id="info-quantity">{{ cross_data.total_quantity }}</span>
+                </div>
+                <div class="info-item">
+                    <span>首要退货原因</span>
+                    <span class="val" id="info-top-reason">{{ cross_data.top_reason or '-' }}</span>
+                </div>
+                <h3 style="margin-top:16px;">📋 原因分布</h3>
+                <div id="info-reason-dist">
+                    {% for reason, count in cross_data.reason_distribution.items() %}
+                    <div class="info-item">
+                        <span>{{ reason }}</span>
+                        <span class="val">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="matrix-section">
+        <h2><span class="icon" style="background:#f4ecf7;color:#8e44ad;">📋</span> 季节×品类 退货主要原因矩阵</h2>
+        <table class="matrix-table">
+            <thead>
+                <tr>
+                    <th>季节 \ 品类</th>
+                    {% for cat in matrix.categories %}
+                    <th>{{ cat }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for season in matrix.seasons %}
+                <tr>
+                    <td>{{ season }}</td>
+                    {% for cat in matrix.categories %}
+                    {% set cell = matrix.matrix[season][cat] %}
+                    <td>
+                        {% if cell.top_reason != '-' %}
+                        <span class="reason-tag">{{ cell.top_reason }}</span>
+                        <span class="count-badge">{{ cell.count }}单</span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<div class="footer">
+    电商退货原因分析工具 &copy; 2026 | 数据驱动决策
+</div>
+
+<script>
+function doCrossAnalysis() {
+    var season = document.getElementById('filter-season').value || null;
+    var category = document.getElementById('filter-category').value || null;
+
+    fetch('/api/cross_analysis', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({season: season, category: category})
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        if (data.cross_img) {
+            document.getElementById('cross-chart').src = 'data:image/png;base64,' + data.cross_img;
+        }
+
+        var filters = data.cross_data.filters || {};
+        var filterText = [];
+        if (filters.season) filterText.push(filters.season);
+        if (filters.category) filterText.push(filters.category);
+        document.getElementById('info-filter').textContent = filterText.join(' / ') || '全部';
+
+        document.getElementById('info-records').textContent = data.cross_data.total_records;
+        document.getElementById('info-quantity').textContent = data.cross_data.total_quantity;
+        document.getElementById('info-top-reason').textContent = data.cross_data.top_reason || '-';
+
+        var distHtml = '';
+        var dist = data.cross_data.reason_distribution || {};
+        for (var k in dist) {
+            distHtml += '<div class="info-item"><span>' + k + '</span><span class="val">' + dist[k] + '</span></div>';
+        }
+        if (!distHtml) {
+            distHtml = '<div class="info-item"><span>暂无数据</span></div>';
+        }
+        document.getElementById('info-reason-dist').innerHTML = distHtml;
+    })
+    .catch(function(err) {
+        console.error('交叉分析请求失败:', err);
+    });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}排行榜 - 签到打卡系统{% endblock %}
+{% block content %}
+{% include '_navbar.html' %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">🏆 排行榜</h3>
+            <div>
+                <span class="user-points">我的排名: {{ user_rank or '未上榜' }}</span>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('points')">积分排行</button>
+            <button class="tab-btn" onclick="switchTab('streak')">连续签到排行</button>
+        </div>
+
+        <div id="points-tab" class="tab-content active">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>用户</th>
+                        <th>积分</th>
+                        <th>连续签到</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in points_board %}
+                    <tr {% if item.user_id == user.id %}style="background: #f0f7ff;"{% endif %}>
+                        <td>
+                            <span class="rank-badge {% if item.rank <= 3 %}rank-{{ item.rank }}{% endif %}">
+                                {{ item.rank }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if item.is_admin %}
+                            <span class="badge badge-admin">管理员</span>
+                            {% endif %}
+                            {{ item.username }}
+                            {% if item.user_id == user.id %}
+                            <span style="color: #667eea;">（我）</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ item.points }}</strong></td>
+                        <td>🔥 {{ item.streak }} 天</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <div class="empty-state-icon">🏆</div>
+                            <p>暂无排行数据</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div id="streak-tab" class="tab-content">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>用户</th>
+                        <th>连续签到</th>
+                        <th>积分</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in streak_board %}
+                    <tr {% if item.user_id == user.id %}style="background: #f0f7ff;"{% endif %}>
+                        <td>
+                            <span class="rank-badge {% if item.rank <= 3 %}rank-{{ item.rank }}{% endif %}">
+                                {{ item.rank }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if item.is_admin %}
+                            <span class="badge badge-admin">管理员</span>
+                            {% endif %}
+                            {{ item.username }}
+                            {% if item.user_id == user.id %}
+                            <span style="color: #667eea;">（我）</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>🔥 {{ item.streak }} 天</strong></td>
+                        <td>{{ item.points }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <div class="empty-state-icon">🔥</div>
+                            <p>暂无排行数据</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(tab + '-tab').classList.add('active');
+}
+</script>
+{% endblock %}

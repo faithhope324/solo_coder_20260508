@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}站内信 - 二手交易平台{% endblock %}
+{% block content %}
+<h2>站内信</h2>
+
+{% if partners %}
+<div class="message-list">
+    {% for p in partners %}
+    <a href="/messages/{{ p.user.id }}" class="message-item">
+        <div class="message-avatar">
+            {% if p.user.avatar %}
+            <img src="/uploads/{{ p.user.avatar }}" alt="{{ p.user.username }}">
+            {% else %}
+            <div class="avatar-placeholder">{{ p.user.username[0] }}</div>
+            {% endif %}
+        </div>
+        <div class="message-content">
+            <div class="message-header">
+                <strong>{{ p.user.username }}</strong>
+                <span class="message-time">{{ p.last_message.created_at.strftime('%m-%d %H:%M') }}</span>
+            </div>
+            <p class="message-preview">{{ p.last_message.content[:50] }}{% if p.last_message.content|length > 50 %}...{% endif %}</p>
+        </div>
+        {% if p.unread %}
+        <span class="badge">{{ p.unread }}</span>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>暂无消息</p>
+</div>
+{% endif %}
+{% endblock %}

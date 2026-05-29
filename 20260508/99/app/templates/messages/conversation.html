@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}与 {{ partner.username }} 的对话 - 二手交易平台{% endblock %}
+{% block content %}
+<div class="conversation-header">
+    <a href="/messages/" class="btn btn-secondary">← 返回收件箱</a>
+    <h2>与 {{ partner.username }} 的对话</h2>
+</div>
+
+<div class="chat-box">
+    {% for msg in messages %}
+    <div class="chat-message {% if msg.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+        <div class="chat-bubble">
+            <p>{{ msg.content }}</p>
+            <span class="chat-time">{{ msg.created_at.strftime('%m-%d %H:%M') }}</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="chat-input">
+    <form method="post" action="/messages/{{ partner.id }}">
+        <div class="chat-form">
+            <input type="text" name="content" placeholder="输入消息..." required maxlength="1000">
+            <button type="submit" class="btn btn-primary">发送</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

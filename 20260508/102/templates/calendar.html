@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}签到日历 - 签到打卡系统{% endblock %}
+{% block content %}
+{% include '_navbar.html' %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">签到日历</h3>
+        </div>
+        <div class="calendar-container">
+            {% include '_calendar.html' %}
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="resultModal">
+    <div class="modal-content" id="modalContent">
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-message" id="modalMessage"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="closeModal()">确定</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showModal(type, title, message) {
+    const modal = document.getElementById('resultModal');
+    const content = document.getElementById('modalContent');
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').innerHTML = message;
+    content.className = 'modal-content modal-' + type;
+    modal.classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('resultModal').classList.remove('active');
+}
+
+function makeup(dateStr) {
+    if (!confirm(`确定要补签 ${dateStr} 吗？\n补签将消耗 {{ makeup_cost }} 积分。`)) {
+        return;
+    }
+    const formData = new FormData();
+    formData.append('date', dateStr);
+    fetch('{{ url_for('makeup') }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showModal('success', '补签成功', 
+                `已补签 ${data.data.date}<br>消耗 ${data.data.cost} 积分<br>剩余 ${data.data.remaining_points} 积分`);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showModal('error', '补签失败', data.message);
+        }
+    });
+}
+</script>
+{% endblock %}

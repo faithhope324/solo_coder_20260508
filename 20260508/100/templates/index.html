@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外卖骑手绩效分析仪表板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 22px;
+            border-left: 4px solid #FF6B35;
+            padding-left: 12px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        tbody tr:hover {
+            background: #f8f9ff;
+            cursor: pointer;
+        }
+
+        tbody tr.selected {
+            background: #fff3e6;
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .rank-1 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .rank-2 {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .rank-3 {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .rank-other {
+            background: #95a5a6;
+        }
+
+        .score-high {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .score-medium {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .score-low {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .rider-selector {
+            margin-bottom: 20px;
+        }
+
+        .rider-selector label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .rider-selector select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .rider-selector select:focus {
+            outline: none;
+            border-color: #FF6B35;
+        }
+
+        .radar-container {
+            text-align: center;
+        }
+
+        .radar-container img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-item .label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-item .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comprehensive-score {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>外卖骑手绩效分析仪表板</h1>
+            <p>基于配送数据的多维度绩效评估与可视化展示</p>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>骑手排行榜</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>排名</th>
+                                <th>骑手ID</th>
+                                <th>订单数</th>
+                                <th>平均送达(分钟)</th>
+                                <th>投诉率</th>
+                                <th>好评数</th>
+                                <th>速度</th>
+                                <th>服务</th>
+                                <th>准时率</th>
+                                <th>综合得分</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for idx, rider in enumerate(leaderboard) %}
+                            <tr class="{{ 'selected' if rider.rider_id == selected_rider else '' }}"
+                                onclick="selectRider('{{ rider.rider_id }}')">
+                                <td>
+                                    <span class="rank-badge {{ 'rank-1' if idx == 0 else 'rank-2' if idx == 1 else 'rank-3' if idx == 2 else 'rank-other' }}">
+                                        {{ idx + 1 }}
+                                    </span>
+                                </td>
+                                <td><strong>{{ rider.rider_id }}</strong></td>
+                                <td>{{ rider.order_count }}</td>
+                                <td>{{ rider.avg_delivery_time }}</td>
+                                <td>{{ "%.2f%%"|format(rider.complaint_rate * 100) }}</td>
+                                <td>{{ rider.positive_reviews }}</td>
+                                <td class="{{ 'score-high' if rider.speed >= 80 else 'score-medium' if rider.speed >= 60 else 'score-low' }}">
+                                    {{ rider.speed }}
+                                </td>
+                                <td class="{{ 'score-high' if rider.service >= 80 else 'score-medium' if rider.service >= 60 else 'score-low' }}">
+                                    {{ rider.service }}
+                                </td>
+                                <td class="{{ 'score-high' if rider.punctuality >= 80 else 'score-medium' if rider.punctuality >= 60 else 'score-low' }}">
+                                    {{ rider.punctuality }}
+                                </td>
+                                <td class="comprehensive-score {{ 'score-high' if rider.comprehensive >= 80 else 'score-medium' if rider.comprehensive >= 60 else 'score-low' }}">
+                                    {{ rider.comprehensive }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>骑手绩效雷达图</h2>
+                <div class="rider-selector">
+                    <label for="riderSelect">选择骑手：</label>
+                    <select id="riderSelect" onchange="selectRider(this.value)">
+                        {% for rider_id in rider_ids %}
+                        <option value="{{ rider_id }}" {{ 'selected' if rider_id == selected_rider else '' }}>
+                            {{ rider_id }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="radar-container">
+                    {% if radar_img %}
+                    <img src="data:image/png;base64,{{ radar_img }}" alt="绩效雷达图">
+                    {% endif %}
+                </div>
+
+                {% for rider in leaderboard %}
+                {% if rider.rider_id == selected_rider %}
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="label">速度评分</div>
+                        <div class="value">{{ rider.speed }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">服务评分</div>
+                        <div class="value">{{ rider.service }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">准时评分</div>
+                        <div class="value">{{ rider.punctuality }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function selectRider(riderId) {
+            window.location.href = '?rider_id=' + riderId;
+        }
+    </script>
+</body>
+</html>

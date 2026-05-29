@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}个人中心 - 二手交易平台{% endblock %}
+{% block content %}
+<div class="profile-header">
+    <div class="profile-avatar">
+        {% if is_owner and current_user.avatar %}
+        <img src="/uploads/{{ current_user.avatar }}" alt="{{ current_user.username }}">
+        {% elif not is_owner and profile_user.avatar %}
+        <img src="/uploads/{{ profile_user.avatar }}" alt="{{ profile_user.username }}">
+        {% else %}
+        <div class="avatar-placeholder avatar-large">
+            {% if is_owner %}{{ current_user.username[0] }}{% else %}{{ profile_user.username[0] }}{% endif %}
+        </div>
+        {% endif %}
+    </div>
+    <div class="profile-info">
+        <h1>{% if is_owner %}{{ current_user.username }}{% else %}{{ profile_user.username }}{% endif %}</h1>
+        <p>注册时间：{% if is_owner %}{{ current_user.created_at.strftime('%Y-%m-%d') }}{% else %}{{ profile_user.created_at.strftime('%Y-%m-%d') }}{% endif %}</p>
+        {% if not is_owner %}
+        <a href="/messages/{{ profile_user.id }}" class="btn btn-primary">发消息</a>
+        {% endif %}
+    </div>
+    {% if is_owner %}
+    <div class="profile-avatar-upload">
+        <form method="post" action="/users/me/avatar" enctype="multipart/form-data">
+            <label for="avatar" class="btn btn-secondary">更换头像</label>
+            <input type="file" id="avatar" name="avatar" accept="image/*" style="display:none;" onchange="this.form.submit()">
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<h2>{% if is_owner %}我发布的物品{% else %}{{ profile_user.username }}发布的物品{% endif %}</h2>
+
+<div class="item-grid">
+    {% for item in items %}
+    <a href="/items/{{ item.id }}" class="item-card">
+        <div class="item-image">
+            {% if item.image_url %}
+            <img src="/uploads/{{ item.image_url }}" alt="{{ item.title }}">
+            {% else %}
+            <div class="no-image">暂无图片</div>
+            {% endif %}
+        </div>
+        <div class="item-info">
+            <h3>{{ item.title }}</h3>
+            <p class="item-price">¥{{ "%.2f"|format(item.price) }}</p>
+            <p class="item-category">{{ item.category }}</p>
+            {% if item.is_sold %}
+            <span class="sold-tag">已售出</span>
+            {% endif %}
+        </div>
+    </a>
+    {% else %}
+    <div class="empty-state">
+        <p>暂无发布的物品</p>
+        {% if is_owner %}
+        <a href="/items/create" class="btn btn-primary">发布物品</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

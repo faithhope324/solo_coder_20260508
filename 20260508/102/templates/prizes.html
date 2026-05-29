@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}奖品兑换 - 签到打卡系统{% endblock %}
+{% block content %}
+{% include '_navbar.html' %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">🎁 奖品兑换</h3>
+            <div>
+                <span class="user-points">我的积分: {{ user.points }}</span>
+            </div>
+        </div>
+        
+        {% if prizes %}
+        <div class="prizes-grid">
+            {% for prize in prizes %}
+            <div class="prize-card">
+                <div class="prize-header">🎁</div>
+                <div class="prize-body">
+                    <div class="prize-name">{{ prize.name }}</div>
+                    <div class="prize-desc">{{ prize.description }}</div>
+                    <div class="prize-footer">
+                        <span class="prize-points">{{ prize.points_required }} 积分</span>
+                        <span class="prize-stock">库存: {{ prize.stock }}</span>
+                    </div>
+                    <button class="btn btn-primary btn-block" style="margin-top: 16px;"
+                            onclick="exchange({{ prize.id }}, '{{ prize.name }}', {{ prize.points_required }})"
+                            {% if user.points < prize.points_required or prize.stock <= 0 %}disabled{% endif %}>
+                        {% if user.points < prize.points_required %}
+                        积分不足
+                        {% elif prize.stock <= 0 %}
+                        库存不足
+                        {% else %}
+                        立即兑换
+                        {% endif %}
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🎁</div>
+            <p>暂无可兑换的奖品</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">📋 我的兑换记录</h3>
+        </div>
+        {% if user_exchanges %}
+        <ul class="history-list">
+            {% for exchange in user_exchanges %}
+            <li class="history-item">
+                <div class="history-info">
+                    <div class="history-reason">兑换: {{ exchange.prize_name }}</div>
+                    <div class="history-time">{{ exchange.time }}</div>
+                </div>
+                <div class="points-negative">-{{ exchange.points_spent }}</div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <p>暂无兑换记录</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal" id="resultModal">
+    <div class="modal-content" id="modalContent">
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-message" id="modalMessage"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="closeModal()">确定</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function exchange(prizeId, prizeName, points) {
+    if (!confirm(`确定要兑换 ${prizeName} 吗？\n将消耗 ${points} 积分。`)) {
+        return;
+    }
+    fetch(`/exchange/${prizeId}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showModal('success', '兑换成功', 
+                `🎉 成功兑换 ${data.data.prize_name}<br>消耗 ${data.data.points_spent} 积分<br>剩余 ${data.data.remaining_points} 积分`);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showModal('error', '兑换失败', data.message);
+        }
+    });
+}
+
+function showModal(type, title, message) {
+    const modal = document.getElementById('resultModal');
+    const content = document.getElementById('modalContent');
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').innerHTML = message;
+    content.className = 'modal-content modal-' + type;
+    modal.classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('resultModal').classList.remove('active');
+}
+</script>
+{% endblock %}

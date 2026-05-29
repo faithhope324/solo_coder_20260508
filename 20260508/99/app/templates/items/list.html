@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}浏览物品 - 二手交易平台{% endblock %}
+{% block content %}
+<h2>浏览物品</h2>
+
+<div class="category-nav">
+    <a href="/items/" class="{% if not current_category %}active{% endif %}">全部</a>
+    {% for cat in categories %}
+    <a href="/items/?category={{ cat }}" class="{% if current_category == cat %}active{% endif %}">{{ cat }}</a>
+    {% endfor %}
+</div>
+
+<form class="search-bar" action="/items/" method="get">
+    {% if current_category %}
+    <input type="hidden" name="category" value="{{ current_category }}">
+    {% endif %}
+    <input type="text" name="q" placeholder="搜索物品..." value="{{ search_query }}">
+    <button type="submit">搜索</button>
+</form>
+
+<div class="item-grid">
+    {% for item in items %}
+    <a href="/items/{{ item.id }}" class="item-card">
+        <div class="item-image">
+            {% if item.image_url %}
+            <img src="/uploads/{{ item.image_url }}" alt="{{ item.title }}">
+            {% else %}
+            <div class="no-image">暂无图片</div>
+            {% endif %}
+        </div>
+        <div class="item-info">
+            <h3>{{ item.title }}</h3>
+            <p class="item-price">¥{{ "%.2f"|format(item.price) }}</p>
+            <p class="item-category">{{ item.category }}</p>
+            {% if item.is_sold %}
+            <span class="sold-tag">已售出</span>
+            {% endif %}
+        </div>
+    </a>
+    {% else %}
+    <div class="empty-state">
+        <p>暂无符合条件的物品</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

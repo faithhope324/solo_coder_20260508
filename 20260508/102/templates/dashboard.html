@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block title %}首页 - 签到打卡系统{% endblock %}
+{% block content %}
+{% include '_navbar.html' %}
+<div class="container">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value">{{ user.points }}</div>
+            <div class="stat-label">当前积分</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-value">{{ streak }}</div>
+            <div class="stat-label">连续签到天数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-value">{{ rank or '-' }}</div>
+            <div class="stat-label">积分排名</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-value">{{ calendar.checkin_count }}/{{ calendar.total_days }}</div>
+            <div class="stat-label">本月签到</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">今日签到</h3>
+        </div>
+        <div class="checkin-section">
+            <button class="checkin-btn" id="checkinBtn" {% if has_checked %}disabled{% endif %}>
+                {% if has_checked %}✓ 已签到{% else %}立即签到{% endif %}
+            </button>
+            <p class="checkin-tip">
+                {% if has_checked %}
+                今天已经签到过了，明天继续加油！
+                {% else %}
+                每日签到获得基础积分 {{ 10 }}，连续签到越多，奖励越多！
+                {% endif %}
+            </p>
+            <p class="checkin-tip" style="color: #f5576c;">
+                💡 补签消耗 {{ makeup_cost }} 积分/次，点击日历中黄色日期可补签
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">本月签到日历</h3>
+            <a href="{{ url_for('calendar_view') }}" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">查看完整日历</a>
+        </div>
+        <div class="calendar-container">
+            {% include '_calendar.html' %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">最近积分记录</h3>
+            <a href="{{ url_for('points_history') }}" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">查看全部</a>
+        </div>
+        {% if point_history %}
+        <ul class="history-list">
+            {% for record in point_history %}
+            <li class="history-item">
+                <div class="history-info">
+                    <div class="history-reason">{{ record.reason }}</div>
+                    <div class="history-time">{{ record.time }}</div>
+                </div>
+                <div class="{% if record.points > 0 %}points-positive{% else %}points-negative{% endif %}">
+                    {% if record.points > 0 %}+{% endif %}{{ record.points }}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <p>暂无积分记录</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal" id="resultModal">
+    <div class="modal-content" id="modalContent">
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-message" id="modalMessage"></div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="closeModal()">确定</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('checkinBtn').addEventListener('click', function() {
+    fetch('{{ url_for('checkin') }}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showModal('success', 
+                `🎉 签到成功！`, 
+                `获得 ${data.data.points} 积分<br>
+                 基础积分: ${data.data.base}<br>
+                 连续奖励: ${data.data.bonus}<br>
+                 已连续签到 ${data.data.consecutive_days} 天`
+            );
+            document.getElementById('checkinBtn').textContent = '✓ 已签到';
+            document.getElementById('checkinBtn').disabled = true;
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showModal('error', '签到失败', data.message);
+        }
+    });
+});
+
+function showModal(type, title, message) {
+    const modal = document.getElementById('resultModal');
+    const content = document.getElementById('modalContent');
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').innerHTML = message;
+    content.className = 'modal-content modal-' + type;
+    modal.classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('resultModal').classList.remove('active');
+}
+
+function makeup(dateStr) {
+    if (!confirm(`确定要补签 ${dateStr} 吗？\n补签将消耗 {{ makeup_cost }} 积分。`)) {
+        return;
+    }
+    const formData = new FormData();
+    formData.append('date', dateStr);
+    fetch('{{ url_for('makeup') }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showModal('success', '补签成功', 
+                `已补签 ${data.data.date}<br>消耗 ${data.data.cost} 积分<br>剩余 ${data.data.remaining_points} 积分`);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showModal('error', '补签失败', data.message);
+        }
+    });
+}
+</script>
+{% endblock %}

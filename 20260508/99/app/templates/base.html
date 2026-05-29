@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}二手交易平台{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">🛒 二手交易平台</a>
+            <div class="nav-links">
+                <a href="/items/">浏览物品</a>
+                {% if current_user %}
+                <a href="/items/create">发布物品</a>
+                <a href="/messages/">站内信{% if unread_count %}<span class="badge">{{ unread_count }}</span>{% endif %}</a>
+                <a href="/users/me">个人中心</a>
+                <a href="/auth/logout">退出</a>
+                {% else %}
+                <a href="/auth/login">登录</a>
+                <a href="/auth/register">注册</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer">
+        <p>二手交易平台 &copy; 2026</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} - 二手交易平台{% endblock %}
+{% block content %}
+<div class="item-detail">
+    <div class="item-detail-image">
+        {% if item.image_url %}
+        <img src="/uploads/{{ item.image_url }}" alt="{{ item.title }}">
+        {% else %}
+        <div class="no-image" style="height:400px;">暂无图片</div>
+        {% endif %}
+    </div>
+    <div class="item-detail-info">
+        <h1>{{ item.title }}</h1>
+        <p class="detail-price">¥{{ "%.2f"|format(item.price) }}</p>
+        <p class="detail-category">分类：{{ item.category }}</p>
+        {% if item.is_sold %}
+        <span class="sold-tag" style="font-size:1.2em;">已售出</span>
+        {% endif %}
+        <div class="detail-desc">
+            <h3>描述</h3>
+            <p>{{ item.description or '暂无描述' }}</p>
+        </div>
+        <div class="detail-seller">
+            <h3>卖家信息</h3>
+            <p>卖家：<a href="/users/{{ owner.id }}">{{ owner.username }}</a></p>
+            <p>发布时间：{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+        </div>
+        <div class="detail-actions">
+            {% if current_user and current_user.id != item.owner_id %}
+            <a href="/messages/{{ owner.id }}?item_id={{ item.id }}" class="btn btn-primary">联系卖家</a>
+            {% elif not current_user %}
+            <a href="/auth/login" class="btn btn-primary">登录后联系卖家</a>
+            {% endif %}
+            {% if current_user and current_user.id == item.owner_id %}
+            <a href="/items/{{ item.id }}/edit" class="btn btn-secondary">编辑</a>
+            <form method="post" action="/items/{{ item.id }}/delete" style="display:inline;" onsubmit="return confirm('确定删除？')">
+                <button type="submit" class="btn btn-danger">删除</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

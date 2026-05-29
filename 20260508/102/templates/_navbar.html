@@ -1,0 +1,19 @@
+<nav class="navbar">
+    <div class="nav-brand">📅 签到打卡系统</div>
+    <ul class="nav-links">
+        <li><a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}class="active"{% endif %}>首页</a></li>
+        <li><a href="{{ url_for('calendar_view') }}" {% if request.endpoint == 'calendar_view' %}class="active"{% endif %}>签到日历</a></li>
+        <li><a href="{{ url_for('leaderboard_view') }}" {% if request.endpoint == 'leaderboard_view' %}class="active"{% endif %}>排行榜</a></li>
+        <li><a href="{{ url_for('prizes_view') }}" {% if request.endpoint == 'prizes_view' %}class="active"{% endif %}>奖品兑换</a></li>
+        {% if session.is_admin %}
+        <li><a href="{{ url_for('admin_dashboard') }}" {% if request.endpoint == 'admin_dashboard' %}class="active"{% endif %}>管理后台</a></li>
+        {% endif %}
+    </ul>
+    <div class="nav-user">
+        <div class="user-info">
+            <span>👤 {{ session.username }}</span>
+            <span class="user-points">💰 {{ user.points }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary" style="padding: 6px 16px; font-size: 13px;">退出</a>
+    </div>
+</nav>

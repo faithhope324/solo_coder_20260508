@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}首页 - 二手交易平台{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1>欢迎来到二手交易平台</h1>
+    <p>买卖闲置，让物品找到新主人</p>
+    <form class="search-bar" action="/items/" method="get">
+        <input type="text" name="q" placeholder="搜索你想要的物品..." value="{{ search_query }}">
+        <button type="submit">搜索</button>
+    </form>
+</div>
+
+<div class="category-nav">
+    <a href="/items/" class="{% if not current_category %}active{% endif %}">全部</a>
+    {% for cat in categories %}
+    <a href="/items/?category={{ cat }}" class="{% if current_category == cat %}active{% endif %}">{{ cat }}</a>
+    {% endfor %}
+</div>
+
+<div class="item-grid">
+    {% for item in items %}
+    <a href="/items/{{ item.id }}" class="item-card">
+        <div class="item-image">
+            {% if item.image_url %}
+            <img src="/uploads/{{ item.image_url }}" alt="{{ item.title }}">
+            {% else %}
+            <div class="no-image">暂无图片</div>
+            {% endif %}
+        </div>
+        <div class="item-info">
+            <h3>{{ item.title }}</h3>
+            <p class="item-price">¥{{ "%.2f"|format(item.price) }}</p>
+            <p class="item-category">{{ item.category }}</p>
+        </div>
+    </a>
+    {% else %}
+    <div class="empty-state">
+        <p>暂无物品，快来发布第一个吧！</p>
+        {% if current_user %}
+        <a href="/items/create" class="btn btn-primary">发布物品</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

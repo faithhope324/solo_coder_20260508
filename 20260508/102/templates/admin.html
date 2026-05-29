@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}管理后台 - 签到打卡系统{% endblock %}
+{% block content %}
+{% include '_navbar.html' %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">⚙️ 管理后台</h3>
+        </div>
+
+        <div class="admin-section">
+            <h4 style="margin-bottom: 16px;">➕ 添加新奖品</h4>
+            <form method="POST" action="{{ url_for('add_prize') }}">
+                <div class="form-row">
+                    <input type="text" name="name" placeholder="奖品名称" required>
+                    <input type="number" name="points_required" placeholder="所需积分" required min="1">
+                    <input type="number" name="stock" placeholder="库存（默认999）" min="0" value="999">
+                </div>
+                <div class="form-row">
+                    <textarea name="description" placeholder="奖品描述"></textarea>
+                </div>
+                <div class="form-row">
+                    <button type="submit" class="btn btn-primary">添加奖品</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="admin-section">
+            <h4 style="margin-bottom: 16px;">📦 奖品管理</h4>
+            {% if prizes %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>奖品名称</th>
+                        <th>描述</th>
+                        <th>所需积分</th>
+                        <th>库存</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prize in prizes %}
+                    <tr>
+                        <form method="POST" action="{{ url_for('edit_prize', prize_id=prize.id) }}">
+                            <td>{{ prize.id }}</td>
+                            <td><input type="text" name="name" value="{{ prize.name }}" style="width: 100px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                            <td><input type="text" name="description" value="{{ prize.description or '' }}" style="width: 150px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                            <td><input type="number" name="points_required" value="{{ prize.points_required }}" min="1" style="width: 70px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                            <td><input type="number" name="stock" value="{{ prize.stock }}" min="0" style="width: 60px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                            <td>
+                                <label class="form-check">
+                                    <input type="checkbox" name="is_active" {% if prize.is_active %}checked{% endif %}>
+                                    <span class="badge {% if prize.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+                                        {% if prize.is_active %}上架中{% else %}已下架{% endif %}
+                                    </span>
+                                </label>
+                            </td>
+                            <td>
+                                <div class="admin-actions">
+                                    <button type="submit" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">保存</button>
+                        </form>
+                                    <form method="POST" action="{{ url_for('delete_prize', prize_id=prize.id) }}" onsubmit="return confirm('确定要删除这个奖品吗？');">
+                                        <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">删除</button>
+                                    </form>
+                                </div>
+                            </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <p>暂无奖品</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="admin-section">
+            <h4 style="margin-bottom: 16px;">👥 用户列表</h4>
+            {% if users %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>角色</th>
+                        <th>积分</th>
+                        <th>注册时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>{{ u.id }}</td>
+                        <td>{{ u.username }}</td>
+                        <td>
+                            {% if u.is_admin %}
+                            <span class="badge badge-admin">管理员</span>
+                            {% else %}
+                            普通用户
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ u.points }}</strong></td>
+                        <td>{{ u.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">👥</div>
+                <p>暂无用户</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

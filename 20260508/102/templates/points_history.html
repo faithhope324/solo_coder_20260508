@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}积分记录 - 签到打卡系统{% endblock %}
+{% block content %}
+{% include '_navbar.html' %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">📝 积分记录</h3>
+            <div>
+                <span class="user-points">当前积分: {{ user.points }}</span>
+            </div>
+        </div>
+        {% if history %}
+        <ul class="history-list">
+            {% for record in history %}
+            <li class="history-item">
+                <div class="history-info">
+                    <div class="history-reason">{{ record.reason }}</div>
+                    <div class="history-time">{{ record.time }}</div>
+                </div>
+                <div class="{% if record.points > 0 %}points-positive{% else %}points-negative{% endif %}">
+                    {% if record.points > 0 %}+{% endif %}{{ record.points }}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <p>暂无积分记录</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

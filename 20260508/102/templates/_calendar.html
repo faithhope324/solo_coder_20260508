@@ -1,0 +1,53 @@
+<div class="calendar-nav">
+    <button onclick="navigateMonth({{ calendar.prev_month.year }}, {{ calendar.prev_month.month }})">← 上月</button>
+    <span class="calendar-month">{{ calendar.month_name }}</span>
+    <button onclick="navigateMonth({{ calendar.next_month.year }}, {{ calendar.next_month.month }})">下月 →</button>
+</div>
+<table class="calendar">
+    <thead>
+        <tr>
+            {% for weekday in calendar.weekdays %}
+            <th>{{ weekday }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for week in calendar.weeks %}
+        <tr>
+            {% for day in week %}
+            <td>
+                <div class="day-cell 
+                    {% if not day.is_current_month %}other-month{% endif %}
+                    {% if day.is_today %}today{% endif %}
+                    {% if day.is_checked %}checked{% if day.is_makeup %} makeup{% endif %}{% endif %}
+                    {% if day.can_makeup %}can-makeup{% endif %}
+                    {% if day.is_future and not day.is_checked %}disabled{% endif %}"
+                    {% if day.can_makeup %}onclick="makeup('{{ day.date }}')"{% endif %}
+                    title="{% if day.is_checked %}{{ day.date }} 已签到{% if day.is_makeup %}（补签）{% endif %}{% elif day.can_makeup %}点击补签（消耗 {{ makeup_cost }} 积分）{% endif %}">
+                    <span class="day-number">{{ day.day }}</span>
+                    {% if day.is_checked and day.is_makeup %}
+                    <span class="makeup-badge">补</span>
+                    {% elif day.is_checked %}
+                    <span class="makeup-badge">✓</span>
+                    {% endif %}
+                </div>
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="calendar-stats">
+    本月已签到 <strong>{{ calendar.checkin_count }}</strong> 天 / 共 <strong>{{ calendar.total_days }}</strong> 天
+    <span style="margin-left: 20px;">
+        <span style="display: inline-block; width: 12px; height: 12px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 3px; vertical-align: middle;"></span> 已签到
+        <span style="display: inline-block; width: 12px; height: 12px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 3px; vertical-align: middle; margin-left: 10px;"></span> 补签
+        <span style="display: inline-block; width: 12px; height: 12px; background: #fff3cd; border-radius: 3px; vertical-align: middle; margin-left: 10px;"></span> 可补签
+    </span>
+</div>
+
+<script>
+function navigateMonth(year, month) {
+    window.location.href = `{{ url_for('calendar_view') }}?year=${year}&month=${month}`;
+}
+</script>
